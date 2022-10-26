@@ -9,220 +9,141 @@ load("Data/wrangled_genus_plank_data.Rdata")
 ########################################################################################
 ## Perform Assessments ##
 ########################################################################################
-kin_density <- cbind(seq_along(as.numeric(kin_mth_dat$Date[kin_mth_dat$Date >1980])),rowSums(kin_mth_dat[kin_mth_dat$Date >1980,2:50]))
+kin_density <- data.frame(seq_along(as.numeric(kin_mth_dat$Date[kin_mth_dat$Date >1980])),rowSums(kin_mth_dat[kin_mth_dat$Date >1980,2:50]))
 
-kinOU <- fit_bif_mod(kin_density,model = "OU",method = "L-BFGS-B",lower = 0)
-kinSN <- fit_bif_mod(kin_density,model = "LSN",method = "L-BFGS-B",lower = 0)
-kinTC <- fit_bif_mod(kin_density,model = "LTC",method = "L-BFGS-B",lower = 0)
-kinPF <- fit_bif_mod(kin_density,model = "LPF",method = "L-BFGS-B",lower = 0)
+wind_density <- data.frame(seq_along(wind_mth_dat$Date[wind_mth_dat$Date > 1984]),rowSums(wind_mth_dat[wind_mth_dat$Date > 1984,2:23]))
 
-observedSN <- -2*(kinOU$loglik - kinSN$loglik)
-observedTC<- -2*(kinOU$loglik - kinTC$loglik)
-observedPF <- -2*(kinOU$loglik - kinPF$loglik)
-knitr::kable(cbind(observedSN,observedTC,observedPF))
+mad_density <- data.frame(seq_along(mad_mth_dat$date),rowSums(mad_mth_dat[,2:103]))
 
-ui <- matrix(c(c(1,0,0,0),c(0,1,0,0),c(0,0,1,0),c(0,0,0,1)),ncol=4,byrow = T)
-ci <- c(0,0,0,0)
-ui %*% p - ci
+kas_density <- data.frame(seq_along(kas_mth_dat$date),rowSums(kas_mth_dat[,2:89]))
 
-tt <- compare(A,B)
-reps <- pbmcapply::pbmclapply(1:50, function(i) compare(A, B),mc.cores=8)
-reps <- pbmcapply::pbmclapply(1:50, function(i) compare(A, C),mc.cores=8)
+LZ_density <- data.frame(seq_along(LZ_mth_dat$date),rowSums(LZ_mth_dat[,2:137]))
 
-lr <- lik_ratios(reps)
+kinOU <- fit_bif_mod(kin_density,model = "OU")
+kinSN <- fit_bif_mod(kin_density,model = "LSN")
+kinTC <- fit_bif_mod(kin_density,model = "LTC")
+kinPF <- fit_bif_mod(kin_density,model = "LPF")
 
-ggplot(lr) + 
-  geom_density(aes(value, fill=simulation), alpha=0.4) + 
-  geom_vline(aes(xintercept=observedc)) + theme_bw()
+kin.observedSN <- -2*(kinOU$loglik - kinSN$loglik)
+kin.observedTC<- -2*(kinOU$loglik - kinTC$loglik)
+kin.observedPF <- -2*(kinOU$loglik - kinPF$loglik)
+knitr::kable(cbind(kin.observedSN,kin.observedTC,kin.observedPF))
 
-compare <- function(A, B){
-  done <- 0
-  while(!done){
-    Asim <- simulate(A)
-    AfitA <- update(A, X = Asim)
-    BfitA <- update(B, X = Asim)
-    done <- AfitA$convergence && BfitA$convergence
-  }
-  done <- 0
-  while(!done){
-    Bsim <- simulate(B)
-    BfitB <- update(B, X = Bsim)
-    AfitB <- update(A, X = Bsim)
-    done <- AfitB$convergence && BfitB$convergence
-  }
-  list(AA = AfitA, BB = BfitB, AB = AfitB, BA = BfitA)
-}
+windOU <- fit_bif_mod(wind_density,model = "OU")
+windSN <- fit_bif_mod(wind_density,model = "LSN")
+windTC <- fit_bif_mod(wind_density,model = "LTC")
+windPF <- fit_bif_mod(wind_density,model = "LPF")
 
+wind.observedSN <- -2*(windOU$loglik - windSN$loglik)
+wind.observedTC<- -2*(kinOU$loglik - windTC$loglik)
+wind.observedPF <- -2*(windOU$loglik - windPF$loglik)
+knitr::kable(cbind(wind.observedSN,wind.observedTC,wind.observedPF))
 
+madOU <- fit_bif_mod(mad_density,model = "OU")
+madSN <- fit_bif_mod(mad_density,model = "LSN")
+madTC <- fit_bif_mod(mad_density,model = "LTC")
+madPF <- fit_bif_mod(mad_density,model = "LPF")
 
+mad.observedSN <- -2*(madOU$loglik - madSN$loglik)
+mad.observedTC<- -2*(madOU$loglik - madTC$loglik)
+mad.observedPF <- -2*(madOU$loglik - madPF$loglik)
 
+kasOU <- fit_bif_mod(kas_density,model = "OU")
+kasSN <- fit_bif_mod(kas_density,model = "LSN")
+kasTC <- fit_bif_mod(kas_density,model = "LTC")
+kasPF <- fit_bif_mod(kas_density,model = "LPF")
 
-f_closure <- function(X, setmodel){
-  function(p){
-    n <- length(X[,1])
-    out <- -sum(dc.gauss(setmodel, x = X[2:n,2], x0 = X[1:(n-1),2], to=X[1:(n-1),1],
-                         t1=X[2:n,1], p, log=T))
-    if(abs(out) == Inf | is.nan(out))
-      out <- 1e19
-    out
-  }
-}
+kas.observedSN <- -2*(kasOU$loglik - kasSN$loglik)
+kas.observedTC<- -2*(kasOU$loglik - kasTC$loglik)
+kas.observedPF <- -2*(kasOU$loglik - kasPF$loglik)
 
-dc.gauss  <- function(setmodel, x, x0, to, t1, pars, log = FALSE){
-  P <- setmodel(x0, to, t1, pars)
-  dnorm(x, mean=P$Ex, sd=sqrt(P$Vx), log=log)
-}
+LZOU <- fit_bif_mod(LZ_density,model = "OU")
+LZSN <- fit_bif_mod(LZ_density,model = "LSN")
+LZTC <- fit_bif_mod(LZ_density,model = "LTC")
+LZPF <- fit_bif_mod(LZ_density,model = "LPF")
 
-constOU <- function(Xo, to, t1, pars){
-  Dt <- t1 - to
-  Ex <- pars["theta"]*(1 - exp(-pars["Ro"] * Dt)) + Xo *
-    exp(-pars["Ro"] * Dt) 
-  Vx <- 0.5 * pars["sigma"] ^ 2 * 
-    (1 - exp(-2 * pars["Ro"] * Dt)) / pars["Ro"]
-  if(pars['Ro'] < 0 ) Vx <- rep(Inf, length(Xo)) 
-  if(pars['sigma'] < 0 ) Vx <- rep(Inf, length(Xo)) 
-  return(list(Ex = Ex, Vx = Vx))
-}
+LZ.observedSN <- -2*(LZOU$loglik - LZSN$loglik)
+LZ.observedTC<- -2*(LZOU$loglik - LZTC$loglik)
+LZ.observedPF <- -2*(LZOU$loglik - LZPF$loglik)
 
+kin.repsSN <- pbmcapply::pbmclapply(1:500, function(i){compare(kinOU, kinSN)},mc.cores=9)
+kin.repsTC <- pbmcapply::pbmclapply(1:500, function(i){compare(kinOU, kinTC)},mc.cores=9)
+kin.repsPF <- pbmcapply::pbmclapply(1:500, function(i){compare(kinOU, kinPF)},mc.cores=9)
 
+kin.lrSN <- lik_ratios(kin.repsSN) |> dplyr::mutate(model = "SN")
+kin.lrTC <- lik_ratios(kin.repsTC) |> dplyr::mutate(model = "TC")
+kin.lrPF <- lik_ratios(kin.repsPF) |> dplyr::mutate(model = "PF")
 
-LSN <- function(Xo, to, t1, pars){
-  
-  R <- function(t, pars){pars[1] + pars[2]*t }
-  
-  check <- any(R(t1,pars) < 0)
-  if(is.na(check) | check | pars[3] < 0){
-    Ex <- Xo
-    Vx <- rep(Inf,length(Xo))
-  } else {
-    
-    
-    moments <- function(t,y,p){ 
-      sqrtR <- sqrt(R(t,pars)) 
-      yd1 <- 2*sqrtR*(sqrtR+pars[3] - y[1]) 
-      yd2 <- -2*sqrtR*y[2] + p[4]^2*(sqrtR+pars[3])
-      list(c(yd1=yd1, yd2=yd2))
-    }
-    jacfn <- function(t,y,p){
-      sqrtR <- sqrt(R(t,pars)) 
-      c(
-        -2*sqrtR, 0,
-        0, -2*sqrtR
-      )}
-    ## The apply calls needed to work with vector inputs as Xo (whole timeseries)
-    times <- matrix(c(to, t1), nrow=length(to))
-    out <- lapply(1:length(Xo), function(i){
-      deSolve::lsoda(y=c(xhat=Xo[i], sigma2=0), times=times[i,], func=moments, 
-                     parms=pars, jacfunc=jacfn) 
-    })
-    Ex <- sapply(1:length(Xo), function(i) out[[i]][2,2]) # times are in rows, cols are time, par1, par2
-    Vx <- sapply(1:length(Xo), function(i) out[[i]][2,3])
-  }
-  # Handle badly defined parameters by creating very low probability returns,
-  # needed particularly for the L-BFGS-B bounded method, which can't handle Infs 
-  # and does rather poorly... Worth investigating a better way to handle this.  
-  # Note errors can apply to some of the timeseries, possibly by estimates of m 
-  # that force system into bifurcation on later parameters (for which terms  
-  # become undefined)
-  
-  if (pars[4] <= 0){
-    warning(paste("sigma=",pars[4]))
-    Vx <- rep(Inf, length(Xo))
-  }
-  if (any(Vx < 0, na.rm=TRUE)){
-    warning(paste("discard negative Vx,  "))
-    Vx[Vx<0] <- Inf
-  }
-  return(list(Ex=Ex, Vx=Vx))
-}
+kin.observed.dat <- data.frame("model" = c("SN","TC","PF"),
+                           "obs" = c(-2*(kinOU$loglik - kinSN$loglik),-2*(kinOU$loglik - kinTC$loglik),-2*(kinOU$loglik - kinPF$loglik)))
+
+kin_lr <- dplyr::left_join(rbind(kin.lrSN,kin.lrTC,kin.lrPF),observed.dat,by="model") |>
+  dplyr::mutate(lake = "Kinneret")
+
+wind.repsSN <- pbmcapply::pbmclapply(1:500, function(i){compare(windOU, windSN)},mc.cores=9)
+wind.repsTC <- pbmcapply::pbmclapply(1:500, function(i){compare(windOU, windTC)},mc.cores=9)
+wind.repsPF <- pbmcapply::pbmclapply(1:500, function(i){compare(windOU, windPF)},mc.cores=9)
+
+wind.lrSN <- lik_ratios(wind.repsSN) |> dplyr::mutate(model = "SN")
+wind.lrTC <- lik_ratios(wind.repsTC) |> dplyr::mutate(model = "TC")
+wind.lrPF <- lik_ratios(wind.repsPF) |> dplyr::mutate(model = "PF")
+
+wind.observed.dat <- data.frame("model" = c("SN","TC","PF"),
+                               "obs" = c(-2*(windOU$loglik - windSN$loglik),-2*(windOU$loglik - windTC$loglik),-2*(windOU$loglik - windPF$loglik)))
+
+wind_lr <- dplyr::left_join(rbind(wind.lrSN,wind.lrTC,wind.lrPF),observed.dat,by="model") |>
+  dplyr::mutate(lake = "Windermere")
+
+mad.repsSN <- pbmcapply::pbmclapply(1:500, function(i){compare(madOU, madSN)},mc.cores=9)
+mad.repsTC <- pbmcapply::pbmclapply(1:500, function(i){compare(madOU, madTC)},mc.cores=9)
+mad.repsPF <- pbmcapply::pbmclapply(1:500, function(i){compare(madOU, madPF)},mc.cores=9)
+
+mad.lrSN <- lik_ratios(mad.repsSN) |> dplyr::mutate(model = "SN")
+mad.lrTC <- lik_ratios(mad.repsTC) |> dplyr::mutate(model = "TC")
+mad.lrPF <- lik_ratios(mad.repsPF) |> dplyr::mutate(model = "PF")
+
+mad.observed.dat <- data.frame("model" = c("SN","TC","PF"),
+                               "obs" = c(-2*(madOU$loglik - madSN$loglik),-2*(madOU$loglik - madTC$loglik),-2*(madOU$loglik - madPF$loglik)))
+
+mad_lr <- dplyr::left_join(rbind(mad.lrSN,mad.lrTC,mad.lrPF),observed.dat,by="model") |>
+  dplyr::mutate(lake = "Mendota")
 
 
-stability_model <- function(X, model=c("LSN", "OU"), p = NULL, ..., 
-                            store_data=TRUE){
-  model <- match.arg(model)
-  # reformat time series objects into proper data frames
-  if(is(X, "ts"))
-    X <- data.frame(as.numeric(time(X)), X@.Data)
-  # if time values are not provided
-  else if(is.null(dim(X)))
-    X <- data.frame(1:length(X), X)
-  
-  
-  if(!is.null(p)){ ## got everything? then rock & roll
-    f1 <- switch(model, 
-                 LSN = f_closure(X, LSN),
-                 OU = f_closure(X, constOU))
-    o <- optim(p, f1, ...)
-    
-  } else if(is.null(p)){ ## oh, need p? try:
-    p <- c(Ro=1/max(time(X[,1])), theta=mean(X[,2]), sigma=sd(X[,2]))
-    f2 <- f_closure(X, constOU)
-    o <- optim(p, f2, ...)
-    
-    # if model is "OU", we're done.  otherwise:
-    if(model=="LSN"){
-      f3 <- f_closure(X, LSN) # switch to the LSN model
-      p_est <- o$par  # & use the OU estimated pars as starting guess
-      # but rescale them to the new definitions:
-      Ro <- as.numeric(p_est[1]^2)
-      theta <- as.numeric(p_est[2]+p_est[1])
-      sigma <- as.numeric(abs(p_est[3]/sqrt(2*p_est[1]+ p_est[2])))
-      p <- c(Ro=Ro, m=0, theta=theta, sigma=sigma)
-      
-      ## now fit the LSN model
-      o <- optim(p, f3, ...)
-    }
-  }
-  names(X) <- c("time", "value")
-  ## Collect the results and we're done
-  if(!store_data) # remove the data object to save space?
-    X <- NULL
-  out <- list(X=X, pars=o$par, model=model, loglik = -o$value,
-              convergence=(o$convergence==0) )
-  class(out) <- c("gauss", "list")
-  out
-}
+kas.repsSN <- pbmcapply::pbmclapply(1:500, function(i){compare(kasOU, kasSN)},mc.cores=9)
+kas.repsTC <- pbmcapply::pbmclapply(1:500, function(i){compare(kasOU, kasTC)},mc.cores=9)
+kas.repsPF <- pbmcapply::pbmclapply(1:500, function(i){compare(kasOU, kasPF)},mc.cores=9)
 
-rc.gauss <- function(setmodel, n=1, x0, to, t1, pars){
-  P <- setmodel(x0, to, t1, pars)
-  rnorm(n, mean=P$Ex, sd=sqrt(P$Vx))
-}
+kas.lrSN <- lik_ratios(kas.repsSN) |> dplyr::mutate(model = "SN")
+kas.lrTC <- lik_ratios(kas.repsTC) |> dplyr::mutate(model = "TC")
+kas.lrPF <- lik_ratios(kas.repsPF) |> dplyr::mutate(model = "PF")
 
-update.gauss <- function(object, ...){
-  stability_model(..., model = object$model, p = object$pars)
-}
+kas.observed.dat <- data.frame("model" = c("SN","TC","PF"),
+                               "obs" = c(-2*(kasOU$loglik - kasSN$loglik),-2*(kasOU$loglik - kasTC$loglik),-2*(kasOU$loglik - kasPF$loglik)))
 
-simulate.gauss <- function(object, nsim = 1, seed = NULL, ...){
-  if(object$model == "LSN"){
-    setmodel <- LSN
-  }else if(object$model == "LTC"){ 
-    setmodel <- LTC
-  }else if(object$model == "LPF"){ 
-    setmodel <- LPF
-  }else if(object$model == "OU"){ 
-    setmodel <- constOU
-  }
-  time <- object$X[,1]
-  N <- length(time)
-  value <- sapply(1:nsim, function(j){
-    X <- numeric(N - 1)
-    X[1] <- object$X[1,2]
-    for(i in 1:(N - 1) ){
-      X[i + 1] <- rc.gauss(setmodel, 1, x0 = X[i], to = time[i], 
-                           t1 = time[i + 1], object$pars)
-    }
-    X
-  })
-  data.frame(time, value)
-}
+kas_lr <- dplyr::left_join(rbind(kas.lrSN,kas.lrTC,kas.lrPF),observed.dat,by="model") |>
+  dplyr::mutate(lake = "Kasumigaura")
 
-lik_ratios <- function(reps){
-  dat <- sapply(reps, function(rep){
-    null <- -2*(rep$AA$loglik - rep$BA$loglik)
-    test <- -2*(rep$AB$loglik - rep$BB$loglik)
-    c(null=null, test=test)
-  })
-  dat <- reshape2::melt(dat)
-  names(dat) <- c("simulation", "rep", "value") 
-  dat
-}
+LZ.repsSN <- pbmcapply::pbmclapply(1:500, function(i){compare(LZOU, LZSN)},mc.cores=9)
+LZ.repsTC <- pbmcapply::pbmclapply(1:500, function(i){compare(LZOU, LZTC)},mc.cores=9)
+LZ.repsPF <- pbmcapply::pbmclapply(1:500, function(i){compare(LZOU, LZPF)},mc.cores=9)
+
+LZ.lrSN <- lik_ratios(LZ.repsSN) |> dplyr::mutate(model = "SN")
+LZ.lrTC <- lik_ratios(LZ.repsTC) |> dplyr::mutate(model = "TC")
+LZ.lrPF <- lik_ratios(LZ.repsPF) |> dplyr::mutate(model = "PF")
+
+LZ.observed.dat <- data.frame("model" = c("SN","TC","PF"),
+                               "obs" = c(-2*(LZOU$loglik - LZSN$loglik),-2*(LZOU$loglik - LZTC$loglik),-2*(LZOU$loglik - LZPF$loglik)))
+
+LZ_lr <- dplyr::left_join(rbind(LZ.lrSN,LZ.lrTC,LZ.lrPF),observed.dat,by="model") |>
+  dplyr::mutate(lake = "Lower Zurich")
+
+
+
+
+
+ggplot(rbind(kin_lr,wind_lr,mad_lr,kas_lr,LZ_lr)) + 
+  geom_density(aes(value, fill=simulation), alpha=0.8,size=0.3) + 
+  geom_vline(aes(xintercept=obs),linetype = "dashed",col="grey20") + 
+  scale_fill_manual(values = c(c("#A1B4FE","#FFE7A1")))+
+  facet_grid(lake~model,scales = "free_x") +theme_bw()
+

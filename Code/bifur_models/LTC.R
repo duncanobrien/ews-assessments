@@ -21,21 +21,23 @@ LTC <- function(Xo, to, t1, pars){
   } else {
     moments <- function(t,y,p){ 
       r_t <- R(t,p)
-      yd1 <- r_t*(y[1] + r_t-p[3])
-      yd2 <- -r_t*r_t*(y[1] + r_t - p[3])*y[2] + p[4]^2*(p[4] - r_t)
+      yd1 <- r_t*(y[1] + r_t - p[3])
+      #yd2 <- -r_t*r_t*(y[1] + r_t - p[3])*y[2] + p[4]^2*(p[4] - r_t)
+      yd2 <- (-(r_t^2)*(y[1] + r_t - p[3])*y[2]) + (p[4]^2)*(p[3] - r_t)
+      
       list(c(yd1=yd1, yd2=yd2))
     }
     jacfn <- function(t,y,p){
-      sqrtR <- sqrt(R(t,p)) 
+      r_t <- R(t,p)
       c(
-        -2*sqrtR, 0,
-        0, -2*sqrtR
+        -(r_t^2), 0,
+        0, -(r_t^2)
       )}
     ## The apply calls needed to work with vector inputs as Xo (whole timeseries)
     times <- matrix(c(to, t1), nrow=length(to))
     out <- lapply(1:length(Xo), function(i){
       deSolve::lsoda(y=c(xhat=Xo[i], sigma2=0), times=times[i,], func=moments, 
-            parms=pars) 
+            parms=pars, jacfunc=jacfn) 
     })
     Ex <- sapply(1:length(Xo), function(i) out[[i]][2,2]) # times are in rows, cols are time, par1, par2
     Vx <- sapply(1:length(Xo), function(i) out[[i]][2,3])

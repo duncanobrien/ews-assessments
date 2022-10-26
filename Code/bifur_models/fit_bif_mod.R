@@ -41,8 +41,7 @@ fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU"), p = NULL, ...,
       p <- c(Ro=Ro, m=0, theta=theta, sigma=sigma)
       
       ## now fit the bifurcating model
-      o <- optim(p, f3, method = "L-BFGS-B",lower = c(NA,0,NA,0))
-      o2 <- optim(p, f3,method = "L-BFGS-B",lower = c(NA,0,NA,0))
+      o <- optim(p, f3,...)
     }
   }
   names(X) <- c("time", "value")
