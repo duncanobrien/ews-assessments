@@ -1,6 +1,6 @@
-fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU"), p = NULL, ..., 
+fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU","superLPF","subLPF"), p = NULL, ..., 
                             store_data=TRUE){
-  model <- match.arg(model,choices = c("LSN","LTC","LPF","OU"))
+  model <- match.arg(model,choices = c("LSN","LTC","LPF","OU","superLPF","subLPF"))
   # reformat time series objects into proper data frames
   if(is(X, "ts")){
     X <- data.frame(as.numeric(time(X)), X@.Data)
@@ -14,7 +14,9 @@ fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU"), p = NULL, ...,
     f1 <- switch(model, 
                  LSN = f_closure(X, LSN),
                  LTC = f_closure(X, LTC),
-                 LPF = f_closure(X, LPF),
+                 LPF = f_closure(X, superLPF),
+                 superLPF = f_closure(X, superLPF),
+                 subLPF = f_closure(X, subLPF),
                  OU = f_closure(X, constOU))
     o <- optim(p, f1, ...)
     
@@ -25,14 +27,6 @@ fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU"), p = NULL, ...,
     
     # if model is "OU", we're done.  otherwise:
     if(model != "OU"){
-      
-    if(model=="LSN"){
-      f3 <- f_closure(X, LSN) # switch to the LSN model
-    }else if(model=="LTC"){
-        f3 <- f_closure(X, LTC) # switch to the LTC model
-      }else if(model=="LPF"){
-        f3 <- f_closure(X, LPF) # switch to the LPF model
-      }
       p_est <- o$par  # & use the OU estimated pars as starting guess
       # but rescale them to the new definitions:
       Ro <- as.numeric(p_est[1]^2)
@@ -40,8 +34,30 @@ fit_bif_mod <- function(X, model=c("LSN","LTC","LPF","OU"), p = NULL, ...,
       sigma <- as.numeric(abs(p_est[3]/sqrt(2*p_est[1]+ p_est[2])))
       p <- c(Ro=Ro, m=0, theta=theta, sigma=sigma)
       
+    if(model=="LSN"){
+      f3 <- f_closure(X, LSN) # switch to the LSN model
+    }else if(model=="LTC"){
+        f3 <- f_closure(X, LTC) # switch to the LTC model
+      }else if(model=="LPF"){
+        f3 <- f_closure(X, LPF) # if LPF given, start with superLPF (timed in the LPF function) then switch to subLPF if struggling to converge
+      
+        test_f3 <- f3(p)
+        
+        if(test_f3 == 1e+19){
+          f3 <- f_closure(X, subLPF) # switch to the subLPF model
+          model = "subLPF"
+        }else{
+          model = "superLPF"
+          }
+        }else if(model=="superLPF"){
+          f3 <- f_closure(X, superLPF) # switch to the untimed superLPF model
+        }else if(model=="subLPF"){
+          f3 <- f_closure(X, subLPF) # switch to the untimed subLPF model
+        }
+
       ## now fit the bifurcating model
       o <- optim(p, f3,...)
+      #o2 <- optim(p, f3,method = "L-BFGS-B",lower = c(NA,0,NA,0))
     }
   }
   names(X) <- c("time", "value")
@@ -61,8 +77,9 @@ f_closure <- function(X, setmodel){
     n <- length(X[,1])
     out <- -sum(dc.gauss(setmodel, X[2:n,2], X[1:(n-1),2], to=X[1:(n-1),1],
                          t1=X[2:n,1], p, log=T))
-    if(abs(out) == Inf | is.nan(out))
+    if(abs(out) == Inf | is.nan(out) | is.na(out)){
       out <- 1e19
+    }
     out
   }
 }
@@ -89,6 +106,10 @@ simulate.gauss <- function(object, nsim = 1, seed = NULL, ...){
     setmodel <- LTC
   }else if(object$model == "LPF"){ 
     setmodel <- LPF
+  }else if(object$model == "superLPF"){ 
+    setmodel <- superLPF
+  }else if(object$model == "subLPF"){ 
+    setmodel <- subLPF
   }else if(object$model == "OU"){ 
     setmodel <- constOU
   }
