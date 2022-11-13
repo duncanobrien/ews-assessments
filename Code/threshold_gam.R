@@ -10,6 +10,8 @@
 #' @param thresh.var The target variable to introduce thresholds around.
 #' @param expl.var The variable split in to thresholds by `thresh.var`. 
 #' If is \code{NULL}, is assumed to be \code{thresh.var}.
+#' @param thresh.range Numeric vector of length 2. The quantiles of 
+#' \code{"expl.var"} to threshold between.
 #' #' @param by Numeric. The increment to step along `thresh.var`
 #' when introducing thresholds.
 #' #' @param k Numeric. The number of knots for the treshold smooth.
@@ -21,7 +23,7 @@
 #' @keywords internal
 #' 
 #'
-find_threshold <- function(data, formula, thresh.var, expl.var = NULL ,by = 1, k = -1){
+find_threshold <- function(data, formula, thresh.var, expl.var = NULL , thresh.range = c(0.1,0.9),by = 1, k = -1){
 
   if(is.null(expl.var)){
   formula.tmp <- update.formula(formula, paste("~ . + threshold + s(",thresh.var,", bs='tp',k=",k,",by=threshold) -1")) 
@@ -31,8 +33,8 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL ,by = 1, k
     formula.tmp <- update.formula(formula, paste("~ . + threshold + s(",expl.var,", bs='tp',k=",k,",by=threshold) -1")) 
   }
   
-  thresh.values<-seq(quantile(data[[thresh.var]],0.2),
-                     quantile(data[[thresh.var]],0.8),by=by) #create range of threshold dates (sequence increasing from 20% to 80% of thresh.var length)
+  thresh.values<-round(seq(quantile(data[[thresh.var]],thresh.range[1]),
+                     quantile(data[[thresh.var]],thresh.range[2]),by=by))#create range of threshold dates (sequence increasing from 20% to 80% of thresh.var length)
   
   gcv.thresh<-thresh.values*NA 
 
@@ -47,7 +49,7 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL ,by = 1, k
   threshold<-thresh.values[order(gcv.thresh)]
   thresh.fac<-factor(ifelse(data[[thresh.var]]<thresh.values[order(gcv.thresh)][1],'pre','post'), levels = c("pre","post")) #define threshold factor based upon best fitting thresh.value
   
-  return(list("thresh_val" = threshold,"thresh_factor" = thresh.fac, "thresh_gcv" = sort(gcv.thresh), "thresh_formula" = formula(gam.test)))
+  return(list("thresh_val" = threshold,"thresh_factor" = thresh.fac, "thresh_gcv" = cbind("thresh.val" = thresh.values,"thresh.gcv" = gcv.thresh), "thresh_formula" = formula(gam.test)))
 }
 
 #' Compare GCV Threshold GAMs 
@@ -56,12 +58,15 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL ,by = 1, k
 #' GAM using minimised generalised cross-validation.
 #' @param data A data.frame containing all variables referenced in `formula`
 #' and `thresh.var`.
-#' @param formula A formula object representing the desired model.
+#' @param cont_formula A formula object representing the desired continuous model.
+#' @param thresh_formula A formula object representing the desired threshold model.
 #' If `thresh.var` is the only explanatory variable, 
 #' use `formula(y ~ 1)`.
 #' @param thresh.var The target variable to introduce thresholds around.
 #' @param expl.var The variable split in to thresholds by `thresh.var`. 
 #' If is \code{NULL}, is assumed to be \code{thresh.var}.
+#' @param thresh.range Numeric vector of length 2. The quantiles of 
+#' \code{"expl.var"} to threshold between.
 #' @param by Numeric. The increment to step along `thresh.var`
 #' when introducing thresholds.
 #' @param k Numeric. The number of knots for the treshold smooth.
@@ -72,12 +77,12 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL ,by = 1, k
 #' gam), and \code{best} (ranked GCV scores for the two model types). 
 #' 
 #'
-compare_gam <- function(data, cont_formula, thresh_formula, thresh.var, expl.var = NULL, by = 1, k = -1){
-  
+compare_gam <- function(data, cont_formula, thresh_formula, thresh.var, expl.var = NULL, thresh.range = c(0.1,0.9), by = 1, k = -1){
+  library(magrittr)
   cont_gam <- mgcv::gam(cont_formula, data = data,
                         family = gaussian(), method = "REML") #fit continuous gam
   
-  cont <- list(mod = cont_gam, summary = summary(cont_gam), method = "continuous", gcv = cont_gam$gcv.ubre, threshold = NA)
+  cont <- list(mod = cont_gam, summary = summary(cont_gam), method = "continuous", gcv = cont_gam$gcv.ubre, threshold = NA,"thresh_var" = data[[thresh.var]])
   
   if(is.null(expl.var)){
     expl.var.lab <- paste0("s(",thresh.var,")",collapse = "")
@@ -85,17 +90,17 @@ compare_gam <- function(data, cont_formula, thresh_formula, thresh.var, expl.var
     expl.var.lab <- paste0("s(",expl.var,")",collapse = "")
   }
   
-  if(cont$summary$s.table[rownames(cont$summary$s.table) == expl.var.lab,4] < 0.1 && 
-     cont$summary$s.table[rownames(cont$summary$s.table) == expl.var.lab,1] >1.00){ #if smooth close to significant (p<0.1) and non-linear (>1 edf) trend, fit threshold gam
+  if(cont$summary$s.table[rownames(cont$summary$s.table) == expl.var.lab,4] < 0.5 && 
+     cont$summary$s.table[rownames(cont$summary$s.table) == expl.var.lab,1] >=1.0){ #if smooth close to significant (p<0.1) and non-linear (>1 edf) trend, fit threshold gam
     
-    found_thresh <- find_threshold(data = data, formula = thresh_formula, thresh.var = thresh.var, expl.var = expl.var, by = by, k = k)
+    found_thresh <- find_threshold(data = data, formula = thresh_formula, thresh.var = thresh.var, expl.var = expl.var, thresh.range = thresh.range, by = by, k = k)
     data$threshold <- found_thresh$thresh_factor #identify optimal threshold
     
     thresh_gam <- mgcv::gam(found_thresh$thresh_formula, #fit threshold gam
                             data = data, 
                             family = gaussian(), method = "REML")  
     
-    thresh <- list(mod = thresh_gam, summary = summary(thresh_gam), method = "threshold", "gcv" = thresh_gam$gcv.ubre, "threshold" = found_thresh$thresh_val[1], "thresh_var" = data[[thresh.var]])
+    thresh <- list(mod = thresh_gam, summary = summary(thresh_gam), method = "threshold", "gcv" = thresh_gam$gcv.ubre, "threshold" = found_thresh$thresh_val[1], "thresh_gcv" = found_thresh$thresh_gcv,"thresh_var" = data[[thresh.var]])
     
   }else{
     thresh <- list(mod = NA, method = "threshold", gcv = Inf)
@@ -135,7 +140,12 @@ predict_best_gam <- function(object, gcv_diff = 6, new.data = NULL,exclude = NUL
 
   if(is.null(new.data)){
     new.data <- as.data.frame(best.mod$mod$model)  %>%
-      dplyr::mutate(thresh.var = best.mod$thresh_var)
+      dplyr::mutate(thresh.var = best.mod$thresh_var) 
+    
+    if(!("threshold" %in% colnames(new.data))){
+      new.data <- new.data %>%
+        dplyr::mutate(threshold = NA)
+    }
   }else{
     if(!any(grepl("threshold",colnames(new.data)))){
       stop("new.data must contain a threshold variable")
@@ -143,10 +153,10 @@ predict_best_gam <- function(object, gcv_diff = 6, new.data = NULL,exclude = NUL
     new.data <- new.data
     }
   new.data <- new.data %>%
-    dplyr::mutate(transition = ifelse(threshold == "pre" & lead(threshold) == "post",'trans',
-                             ifelse(threshold == "post" & lag(threshold) == "pre",'trans',      
+    dplyr::mutate(transition = ifelse(threshold == "pre" & dplyr::lead(threshold) == "post",'trans',
+                             ifelse(threshold == "post" & dplyr::lag(threshold) == "pre",'trans',      
                                     'no.trans')))
-  pred <- predict(best.mod$mod, newdata = new.data, type = 'link', se.fit = TRUE,
+  pred <- predict(best.mod$mod, newdata = new.data, type = 'response', se.fit = TRUE,
                 exclude = exclude)
 
   return(cbind(new.data,"fit" = pred$fit, "ci" = pred$se.fit))

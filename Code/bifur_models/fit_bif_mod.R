@@ -138,19 +138,19 @@ lik_ratios <- function(reps){
   dat
 }
 
-compare <- function(A, B){
+compare <- function(A, B,...){
   done <- 0
   while(!done){
     Asim <- simulate(A)
-    AfitA <- update(A, X = Asim)
-    BfitA <- update(B, X = Asim)
+    AfitA <- update(A, X = Asim,...)
+    BfitA <- update(B, X = Asim,...)
     done <- AfitA$convergence && BfitA$convergence
   }
   done <- 0
   while(!done){
     Bsim <- simulate(B)
-    BfitB <- update(B, X = Bsim)
-    AfitB <- update(A, X = Bsim)
+    BfitB <- update(B, X = Bsim,...)
+    AfitB <- update(A, X = Bsim,...)
     done <- AfitB$convergence && BfitB$convergence
   }
   list(AA = AfitA, BB = BfitB, AB = AfitB, BA = BfitA)
