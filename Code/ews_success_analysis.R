@@ -9,7 +9,7 @@ require(Matrix)
 require(tidyverse)
 require(brms)
 
-source("Code/expanding_ews_diff_fn.R")
+source("Code/extract_ews_pred_fn.R")
 load("Data/wrangled_genus_plank_data.Rdata")
 
 genus_lake_exp_multi_ews <- read.csv(file = "Results/lake_results/genus_lake_exp_multi_ews.csv")[,-1] #drop write.csv() introduced X column
@@ -29,40 +29,76 @@ genus_lake_roll_multi_ews_perm <- read.csv(file = "Results/lake_results/genus_la
 ##########################################################################################
 # Extract EWS success
 ##########################################################################################
-ewsnet_diff_df <- extract.ews.difference(ews.data =  genus_lake_ewsnet,sensitivity = 0.5,
-                                         outcome = cbind("system" = unique(paste(genus_lake_ewsnet$lake,genus_lake_ewsnet$res,sep = "_")),
-                                                         "outcome" = c("trans","trans","no.trans","no.trans","no.trans","trans","trans","no.trans","no.trans","no.trans")),
+
+lake_outcome_whole <- data.frame("reference" = unique(paste(genus_lake_roll_uni_ews_perm$lake,genus_lake_roll_uni_ews_perm$res,sep = "_"))) |>
+                      dplyr::mutate("outcome" = 
+                        case_when(
+                          grepl("Kinneret", reference) ~ "trans",
+                          grepl("Kasumigaura", reference)  ~ "trans",
+                          grepl("Washington", reference) ~ "trans",
+                          grepl("Monona", reference) ~ "trans",
+                          TRUE ~ "no.trans"
+                        )) 
+
+lake_outcome_troph <- subset(rbind(genus_lake_phyto_roll_uni_ews,genus_lake_zoo_roll_uni_ews), select = c(lake,res,troph_level)) |>
+  dplyr::mutate(outcome = case_when(
+    grepl("Kinneret", lake) & troph_level == "phytoplankton" ~ "trans",
+    grepl("Kasumigaura", lake) & troph_level == "zooplankton" ~ "trans",
+    grepl("Washington", lake) & troph_level == "phytoplankton" ~ "trans",
+    grepl("Monona", lake) & troph_level == "zooplankton" ~ "trans",
+    TRUE ~ "no.trans"
+    )) |>
+  dplyr::mutate(reference = paste(lake,res,troph_level,sep="_"))|>
+  dplyr::select(reference,outcome)|>
+  dplyr::distinct(reference,.keep_all = T)
+
+ewsnet_diff_df <- extract_ews_pred(ews.data =  genus_lake_ewsnet,
+                                   sensitivity = 0.5,
+                                         outcome = lake_outcome_whole,
                                          method = "ML")
 
+ewsnet_diff_df <- extract_ews_pred(ews.data =  genus_lake_phyto_ewsnet,
+                                   sensitivity = 0.5,
+                                   outcome = lake_outcome_troph,
+                                   method = "ML")
 
-rollews_diff_df <- extract.ews.difference(genus_lake_roll_uni_ews,sensitivity = 0.7,
-                                          outcome = cbind("system" = unique(paste(genus_lake_roll_uni_ews$lake,genus_lake_roll_uni_ews$res,sep = "_")),
-                                                          "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+
+rollews_diff_df <- extract_ews_pred(ews.data =genus_lake_roll_uni_ews,
+                                          sensitivity = 0.7,
+                                          outcome = lake_outcome_whole,
                                           method = "rolling")
 
-rollews_diff_perm_df <- extract.ews.difference(ews.data = genus_lake_roll_uni_ews_perm,sensitivity = 0.95,
-                                          outcome = cbind("system" = unique(paste(genus_lake_roll_uni_ews_perm$lake,genus_lake_roll_uni_ews_perm$res,sep = "_")),
-                                                          "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+rollews_diff_df <- extract_ews_pred(ews.data = rbind(genus_lake_phyto_roll_uni_ews,genus_lake_zoo_roll_uni_ews),
+                                          sensitivity = 0.7,
+                                          outcome = lake_outcome_troph,
+                                          method = "rolling")
+
+rollews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_uni_ews_perm,
+                                               sensitivity = 0.95,
+                                          outcome = lake_outcome_whole,
                                           method = "rolling",surrogate = T)
 
-expews_diff_df <- extract.ews.difference(genus_lake_exp_uni_ews,sensitivity = 2,
-                                         outcome = cbind("system" = unique(paste(genus_lake_exp_uni_ews$lake,genus_lake_exp_uni_ews$res,sep = "_")),
-                                                         "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+expews_diff_df <- extract_ews_pred(ews.data = genus_lake_exp_uni_ews,
+                                         sensitivity = 2,
+                                         outcome = lake_outcome_whole,
                                          method = "expanding")
 
-rollmultiews_diff_df <- extract.ews.difference(genus_lake_roll_multi_ews,sensitivity = 0.7,
-                                               outcome = cbind("system" = unique(paste(genus_lake_roll_multi_ews$lake,genus_lake_roll_multi_ews$res,sep = "_")),
-                                                               "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+expews_diff_df <- extract_ews_pred(ews.data = genus_lake_phyto_exp_uni_ews,
+                                         sensitivity = 2,
+                                         outcome = lake_outcome_troph,
+                                         method = "expanding")
+
+
+rollmultiews_diff_df <- extract_ews_pred(genus_lake_roll_multi_ews,sensitivity = 0.7,
+                                               outcome = lake_outcome,
                                                method = "rolling")
 
-rollmultiews_diff_perm_df <- extract.ews.difference(ews.data = genus_lake_roll_multi_ews_perm,sensitivity = 0.95,
-                                               outcome = cbind("system" = unique(paste(genus_lake_roll_multi_ews_perm$lake,genus_lake_roll_multi_ews_perm$res,sep = "_")),
-                                                               "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+rollmultiews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_multi_ews_perm,sensitivity = 0.95,
+                                               outcome = lake_outcome,
                                                method = "rolling",surrogate = T)
 
-expmultiews_diff_df <- extract.ews.difference(genus_lake_exp_multi_ews,sensitivity = 2,
-                                              outcome = cbind("system" = unique(paste(genus_lake_exp_multi_ews$lake,genus_lake_exp_multi_ews$res,sep = "_")),
-                                                              "outcome" = c("trans","trans","no.trans","trans","no.trans","trans","trans","no.trans","trans","no.trans")),
+expmultiews_diff_df <- extract_ews_pred(genus_lake_exp_multi_ews,sensitivity = 2,
+                                              outcome = lake_outcome,
                                               method = "expanding")
 
 ggplot(expews_diff_df |>
