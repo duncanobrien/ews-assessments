@@ -57,10 +57,7 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
     
     for (perm in seq_len(iter)){ # for each permutation randomly sample from ts with replacement at each time point
       new_col_name <- paste0("perm_", perm) # new column and colname for each permutation
-      perm.df[,new_col_name] <- sample(x = data[,2],replace = TRUE,size = length(data[,1]))
-      while(mean(perm.df[,new_col_name] == min(perm.df[,new_col_name])) > 0.49){
-        perm.df[,new_col_name] <-  sample(x = data[,2],replace = TRUE,size = length(data[,1]))
-      }
+      perm.df[,new_col_name] <- sample(x = data[,2],replace = T,size = length(data[,1]))
       }
   
   }
@@ -104,9 +101,9 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
 
       perm.ls <- lapply(1:iter,FUN = function(perm){
         sapply(2:dim(data)[2], function(i){
-          s_out <- sample(x = data[,i],replace = TRUE,size = length(data[,1]))
-          while(mean(s_out == min(s_out)) > 0.49){
-            s_out <- sample(x = data[,i],replace = TRUE,size = length(data[,1]))
+          s_out <- sample(x = data[,i],replace = T,size = length(data[,1]))
+          while(mean(s_out == min(s_out)) > 0.47){ #if ts contains many zeroes, prevent the sampling with replacement 
+            s_out <- sample(x = data[,i],replace = T,size = length(data[,1]))
           }
           return(s_out)
         })
