@@ -314,6 +314,13 @@ p_temporal <- ggplot(data = ss_time_plot_dat, aes(x=date,y=metric.val)) +
 #############################################################################
 #Compare State Spaces
 #############################################################################
+state_transition_dates <- subset(lake_state_space,transition == "trans") |>
+  rename(state_date = date)
+temporal_transition_dates <- subset(lake_temporal,transition == "trans") |>
+  rename(temporal_date = date)
+
+transition_dates <- left_join(state_transition_dates,temporal_transition_dates,by = lake) |>
+  mutate(date_match = ifelse(state_date == temporal_date, TRUE, FALSE))
 
 ggplot2::ggsave("/Users/ul20791/Downloads/lake_state_spaces.pdf",
        ggpubr::ggarrange(p_temporal + ggtitle("a) time series"),
