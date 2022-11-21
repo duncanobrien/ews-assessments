@@ -44,9 +44,9 @@ source("/Users/ul20791/Desktop/Academia/PhD/Data/Washington/Data/washington_plan
 ################################################################################################################
 ## Wangle Data ##
 
-save(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
-     kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat,
-    file =  "Data/wrangled_genus_plank_data.Rdata" )
+# save(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
+#      kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat,
+#     file =  "Data/wrangled_genus_plank_data.Rdata" )
 
 #prewrangled load("Data/wrangled_genus_plank_data.Rdata")
 ################################################################################################################
@@ -559,9 +559,9 @@ write.csv(genus_lake_ewsnet,file = "Results/lake_results/genus_lake_ewsnet.csv")
 
 
 genus_lake_phyto_ewsnet <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                  wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
+                                                  wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
                                                   kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                  wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                  wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                        FUN = function(x){
                                          
                                          x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)
@@ -614,9 +614,9 @@ genus_lake_phyto_ewsnet <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_da
 write.csv(genus_lake_phyto_ewsnet,file = "Results/lake_results/genus_lake_ewsnet_phyto.csv")
 
 genus_lake_zoo_ewsnet <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
+                                                wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
                                                 kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                              FUN = function(x){
                                                
                                                x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)
@@ -729,9 +729,9 @@ write.csv(genus_lake_roll_multi_ews,file = "Results/lake_results/genus_lake_roll
 
 
 genus_lake_zoo_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                          wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
+                                                          wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
                                                     kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                    wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                    wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                
                                                     FUN = function(x){
                                                  
@@ -786,9 +786,9 @@ genus_lake_zoo_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],
 write.csv(genus_lake_zoo_roll_multi_ews,file = "Results/lake_results/genus_lake_roll_multi_ews_zoo.csv")
 
 genus_lake_phyto_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                        wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
+                                                        wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
                                                         kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                        wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                        wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                                    
                                                    FUN = function(x){
                                                      
@@ -903,9 +903,9 @@ write.csv(genus_lake_roll_multi_ews_perm,file = "Results/lake_results/genus_lake
 
 
 genus_lake_zoo_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                             wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
-                                                             kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                             wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                                  wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
+                                                                  kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
+                                                                  wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                           FUN = function(x){
                                                             
                                                             sub_dat <- x[sapply(colnames(x),FUN = function(i){
@@ -959,9 +959,9 @@ genus_lake_zoo_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,c(
 write.csv(genus_lake_zoo_roll_multi_ews_perm,file = "Results/lake_results/genus_lake_roll_multi_ews_perm_zoo.csv")
 
 genus_lake_phyto_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                         wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
-                                                         kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                         wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                                    wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
+                                                                    kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
+                                                                    wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                                     FUN = function(x){
                                                       
                                                       sub_dat <- x[sapply(colnames(x),FUN = function(i){
@@ -1074,9 +1074,9 @@ genus_lake_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_d
 write.csv(genus_lake_exp_multi_ews,file = "Results/lake_results/genus_lake_exp_multi_ews.csv")
 
 genus_lake_phyto_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                         wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
+                                                         wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
                                                          kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                         wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                         wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                                   FUN = function(x){
                                                     
                                                     sub_dat <- x[sapply(colnames(x),FUN = function(i){
@@ -1128,9 +1128,9 @@ genus_lake_phyto_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],ka
 write.csv(genus_lake_phyto_exp_multi_ews,file = "Results/lake_results/genus_lake_exp_multi_ews_phyto.csv")
 
 genus_lake_zoo_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                   wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
-                                                   kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                   wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                       wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
+                                                       kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
+                                                       wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                               FUN = function(x){
                                                 
                                                 sub_dat <- x[sapply(colnames(x),FUN = function(i){
@@ -1237,9 +1237,9 @@ write.csv(genus_lake_roll_uni_ews,file = "Results/lake_results/genus_lake_roll_u
 
 
 genus_lake_phyto_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                        wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
+                                                        wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
                                                         kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                        wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                        wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                              FUN = function(x){
                                                
                                                x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
@@ -1284,9 +1284,9 @@ genus_lake_phyto_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas
 write.csv(genus_lake_phyto_roll_uni_ews,file = "Results/lake_results/genus_lake_roll_uni_ews_phyto.csv")
 
 genus_lake_zoo_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                      wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
+                                                      wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
                                                       kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                      wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                      wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                    FUN = function(x){
                                                      
                                                      x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
@@ -1383,9 +1383,9 @@ genus_lake_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_dat
 write.csv(genus_lake_roll_uni_ews_perm,file = "Results/lake_results/genus_lake_roll_uni_ews_perm.csv")
 
 genus_lake_phyto_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                             wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
-                                                             kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                             wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                                 wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
+                                                                 kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
+                                                                 wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                                  FUN = function(x){
                                                    
                                                    x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
@@ -1430,9 +1430,9 @@ genus_lake_phyto_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1
 write.csv(genus_lake_phyto_roll_uni_ews_perm,file = "Results/lake_results/genus_lake_roll_uni_ews_perm_phyto.csv")
 
 genus_lake_zoo_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                           wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
-                                                           kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                           wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                               wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
+                                                               kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
+                                                               wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                         FUN = function(x){
                                                           
                                                           x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
@@ -1529,9 +1529,9 @@ genus_lake_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat
 write.csv(genus_lake_exp_uni_ews,file = gzfile("Results/lake_results/genus_lake_exp_uni_ews.csv.gz"))
 
 genus_lake_phyto_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_yr_dat[,c(1:63)],LZ_yr_dat[,c(1:119)],mad_yr_dat[,c(1:87)],
-                                                 wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:90)],
-                                                 kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
-                                                 wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:87)]),
+                                                       wind_yr_dat[,c(1:18)],wash_yr_dat[,c(1:7)],leve_yr_dat[,c(1:5)],UZ_yr_dat[,c(1:61)],mon_yr_dat[,c(1:84)],
+                                                       kin_mth_dat[,c(1:28)],kas_mth_dat[,c(1:63)],LZ_mth_dat[,c(1:119)],mad_mth_dat[,c(1:86)],
+                                                       wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                             FUN = function(x){
                                               
                                               x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
@@ -1577,9 +1577,9 @@ genus_lake_phyto_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_
 write.csv(genus_lake_phyto_exp_uni_ews,file = gzfile("Results/lake_results/genus_lake_exp_uni_ews_phyto.csv.gz"))
 
 genus_lake_zoo_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_dat[,c(1,64:89)],LZ_yr_dat[,c(1,120:137)],mad_yr_dat[,c(1,88:105)],
-                                                     wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,91:107)],
+                                                     wind_yr_dat[,c(1,19:23)],wash_yr_dat[,c(1,8:16)],leve_yr_dat[,c(1,6:8)],UZ_yr_dat[,c(1,62:79)],mon_yr_dat[,c(1,85:101)],
                                                      kin_mth_dat[,c(1,29:50)],kas_mth_dat[,c(1,64:89)],LZ_mth_dat[,c(1,120:137)],mad_mth_dat[,c(1,87:103)],
-                                                     wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,89:105)]),
+                                                     wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                   FUN = function(x){
                                                     
                                                     x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
