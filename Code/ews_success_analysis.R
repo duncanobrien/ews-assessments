@@ -10,37 +10,43 @@ require(tidyverse)
 require(brms)
 
 source("Code/extract_ews_pred_fn.R")
-load("Data/wrangled_genus_plank_data.Rdata")
+#load("Data/wrangled_genus_plank_data.Rdata")
 
-genus_lake_exp_multi_ews <- read.csv(file = "Results/lake_results/genus_lake_exp_multi_ews.csv")[,-1] #drop write.csv() introduced X column
+genus_lake_exp_multi_ews <- rbind(read.csv(file = "Results/lake_results/genus_lake_exp_multi_ews_phyto.csv")[,-1], #drop write.csv() introduced X column
+                                  read.csv(file = "Results/lake_results/genus_lake_exp_multi_ews_zoo.csv")[,-1])
 
-genus_lake_exp_uni_ews <- read.csv(file = "Results/lake_results/genus_lake_exp_uni_ews.csv.gz")[,-1]
+genus_lake_exp_uni_ews <- rbind(read.csv(file = "Results/lake_results/genus_lake_exp_uni_ews_phyto.csv.gz")[,-1],
+                                read.csv(file = "Results/lake_results/genus_lake_exp_uni_ews_zoo.csv.gz")[,-1])
 
-genus_lake_roll_uni_ews <- read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews.csv")[,-1]
+genus_lake_roll_uni_ews <- rbind(read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews_phyto.csv")[,-1],
+                                 read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews_zoo.csv")[,-1])
 
-genus_lake_roll_multi_ews <- read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews.csv")[,-1]
+genus_lake_roll_multi_ews <- rbind(read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews_phyto.csv")[,-1],
+                                   read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews_zoo.csv")[,-1])
 
-genus_lake_ewsnet <- read.csv(file = "Results/lake_results/genus_lake_ewsnet.csv")[,-1]
+genus_lake_ewsnet <- rbind(read.csv(file = "Results/lake_results/genus_lake_ewsnet_phyto.csv")[,-1],
+                           read.csv(file = "Results/lake_results/genus_lake_ewsnet_zoo.csv")[,-1])
 
-genus_lake_roll_uni_ews_perm <- read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews_perm.csv")[,-1]
+genus_lake_roll_uni_ews_perm <- rbind(read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews_perm_phyto.csv")[,-1],
+                                      read.csv(file = "Results/lake_results/genus_lake_roll_uni_ews_perm_zoo.csv")[,-1])
 
-genus_lake_roll_multi_ews_perm <- read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews_perm.csv")[,-1]
-
+genus_lake_roll_multi_ews_perm <- rbind(read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews_perm_phyto.csv")[,-1],
+                                        read.csv(file = "Results/lake_results/genus_lake_roll_multi_ews_perm_zoo.csv")[,-1])
 ##########################################################################################
 # Extract EWS success
 ##########################################################################################
 
-lake_outcome_whole <- data.frame("reference" = unique(paste(genus_lake_roll_uni_ews_perm$lake,genus_lake_roll_uni_ews_perm$res,sep = "_"))) |>
-                      dplyr::mutate("outcome" = 
-                        case_when(
-                          grepl("Kinneret", reference) ~ "trans",
-                          grepl("Kasumigaura", reference)  ~ "trans",
-                          grepl("Washington", reference) ~ "trans",
-                          grepl("Monona", reference) ~ "trans",
-                          TRUE ~ "no.trans"
-                        )) 
+# lake_outcome_whole <- data.frame("reference" = unique(paste(genus_lake_roll_uni_ews_perm$lake,genus_lake_roll_uni_ews_perm$res,sep = "_"))) |>
+#                       dplyr::mutate("outcome" = 
+#                         case_when(
+#                           grepl("Kinneret", reference) ~ "trans",
+#                           grepl("Kasumigaura", reference)  ~ "trans",
+#                           grepl("Washington", reference) ~ "trans",
+#                           grepl("Monona", reference) ~ "trans",
+#                           TRUE ~ "no.trans"
+#                         )) 
 
-lake_outcome_troph <- subset(rbind(genus_lake_phyto_roll_uni_ews,genus_lake_zoo_roll_uni_ews), select = c(lake,res,troph_level)) |>
+lake_outcome_troph <- subset(rbind(genus_lake_exp_multi_ews), select = c(lake,res,troph_level)) |>
   dplyr::mutate(outcome = case_when(
     grepl("Kinneret", lake) & troph_level == "phytoplankton" ~ "trans",
     grepl("Kasumigaura", lake) & troph_level == "zooplankton" ~ "trans",
@@ -52,54 +58,43 @@ lake_outcome_troph <- subset(rbind(genus_lake_phyto_roll_uni_ews,genus_lake_zoo_
   dplyr::select(reference,outcome)|>
   dplyr::distinct(reference,.keep_all = T)
 
-ewsnet_diff_df <- extract_ews_pred(ews.data =  genus_lake_ewsnet,
-                                   sensitivity = 0.5,
-                                         outcome = lake_outcome_whole,
-                                         method = "ML")
 
-ewsnet_diff_df <- extract_ews_pred(ews.data =  genus_lake_phyto_ewsnet,
-                                   sensitivity = 0.5,
+ewsnet_diff_df <- extract_ews_pred(ews.data =  genus_lake_ewsnet,
+                                   sensitivity = 0.7,
                                    outcome = lake_outcome_troph,
                                    method = "ML")
 
-
-rollews_diff_df <- extract_ews_pred(ews.data =genus_lake_roll_uni_ews,
-                                          sensitivity = 0.7,
-                                          outcome = lake_outcome_whole,
-                                          method = "rolling")
-
-rollews_diff_df <- extract_ews_pred(ews.data = rbind(genus_lake_phyto_roll_uni_ews,genus_lake_zoo_roll_uni_ews),
+rollews_diff_df <- extract_ews_pred(ews.data = genus_lake_roll_uni_ews,
                                           sensitivity = 0.7,
                                           outcome = lake_outcome_troph,
                                           method = "rolling")
 
 rollews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_uni_ews_perm,
-                                               sensitivity = 0.95,
-                                          outcome = lake_outcome_whole,
-                                          method = "rolling",surrogate = T)
+                                         sensitivity = 0.95,
+                                         outcome = lake_outcome_troph,
+                                         method = "rolling",surrogate = T)
 
 expews_diff_df <- extract_ews_pred(ews.data = genus_lake_exp_uni_ews,
-                                         sensitivity = 2,
-                                         outcome = lake_outcome_whole,
-                                         method = "expanding")
+                                   sensitivity = 2,
+                                   outcome = lake_outcome_troph,
+                                   method = "expanding")
 
-expews_diff_df <- extract_ews_pred(ews.data = genus_lake_phyto_exp_uni_ews,
-                                         sensitivity = 2,
+
+rollmultiews_diff_df <- extract_ews_pred(ews.data = genus_lake_roll_multi_ews,
+                                         sensitivity = 0.7,
                                          outcome = lake_outcome_troph,
-                                         method = "expanding")
+                                         method = "rolling")
 
+rollmultiews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_multi_ews_perm,
+                                              sensitivity = 0.95,
+                                              outcome = lake_outcome_troph,
+                                              method = "rolling",
+                                              surrogate = T)
 
-rollmultiews_diff_df <- extract_ews_pred(genus_lake_roll_multi_ews,sensitivity = 0.7,
-                                               outcome = lake_outcome,
-                                               method = "rolling")
-
-rollmultiews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_multi_ews_perm,sensitivity = 0.95,
-                                               outcome = lake_outcome,
-                                               method = "rolling",surrogate = T)
-
-expmultiews_diff_df <- extract_ews_pred(genus_lake_exp_multi_ews,sensitivity = 2,
-                                              outcome = lake_outcome,
-                                              method = "expanding")
+expmultiews_diff_df <- extract_ews_pred(genus_lake_exp_multi_ews,
+                                        sensitivity = 2,
+                                        outcome = lake_outcome_troph,
+                                        method = "expanding")
 
 ggplot(expews_diff_df |>
          group_by(data_source,metric.code,lake,res) |>
@@ -151,46 +146,47 @@ pal <- c("#6886c4",
 # Fit Models
 ##########################################################################################
 
-brms_data <-   as.data.table(ewsnet_diff_df) %>%
+all_ews_data <- as.data.table(ewsnet_diff_df) %>%
   .[,.SD[1], by = c("data_source", "scaling","lake","res")] %>%
-  .[,c("data_source","scaling","lake","res","method", "computation","prediction")] %>% #slice to first row of each group
+  .[,c("data_source","troph_level","scaling","lake","res","method", "computation","prediction")] %>% #slice to first row of each group
   setnames(old = "scaling",new= "metric.code") %>%
-  .[metric.code == "scaled",] %>%
+  #.[metric.code == "scaled",] %>%
   #rbind(as.data.table(rollews_diff_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
-  rbind(as.data.table(rollews_diff_perm_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
-  
-  rbind(as.data.table(expews_diff_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
-  rbind(as.data.table(expmultiews_diff_df)[,data_source := NA][,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
+  rbind(as.data.table(rollews_diff_perm_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction")]) %>%
+  rbind(as.data.table(expews_diff_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction")]) %>%
+  rbind(as.data.table(expmultiews_diff_df)[,data_source := NA][,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction")]) %>%
   #rbind(as.data.table(rollmultiews_diff_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
-  rbind(as.data.table(rollmultiews_diff_perm_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","metric.code","lake","res","method", "computation","prediction")]) %>%
+  rbind(as.data.table(rollmultiews_diff_perm_df)[,.SD[1], by = c("data_source", "metric.code","lake","res")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction")]) %>%
   .[,outcome := ifelse(prediction %in% c("match","prior"),
                        1,0)] %>%
   .[,variate := ifelse(grepl("multivariate",method),"multivariate","univariate")]%>%
-  .[,ts_length := ifelse(lake == "Kinneret" & res == "Yearly",dim(kin_yr_dat)[1],
-                         ifelse(lake == "Kinneret" & res == "Monthly",dim(kin_mth_dat)[1],
-                                ifelse(lake == "Kasumigaura" & res == "Yearly",dim(kas_yr_dat)[1],
-                                       ifelse(lake == "Kasumigaura" & res == "Monthly",dim(kas_mth_dat)[1],
-                                              ifelse(lake == "Windermere" & res == "Yearly",dim(wind_yr_dat)[1],
-                                                     ifelse(lake == "Windermere" & res == "Monthly",dim(wind_mth_dat)[1],
-                                                            ifelse(lake == "Mendota" & res == "Yearly",dim(mad_yr_dat)[1],
-                                                                   ifelse(lake == "Mendota" & res == "Monthly",dim(mad_mth_dat)[1],
-                                                                          ifelse(lake == "Lower Zurich" & res == "Yearly",dim(LZ_yr_dat)[1],dim(LZ_mth_dat)[1])))))))))] %>%
-  .[,ts_length := scale(as.numeric(ts_length))] %>%
+  # .[,ts_length := ifelse(lake == "Kinneret" & res == "Yearly",dim(kin_yr_dat)[1],
+  #                        ifelse(lake == "Kinneret" & res == "Monthly",dim(kin_mth_dat)[1],
+  #                               ifelse(lake == "Kasumigaura" & res == "Yearly",dim(kas_yr_dat)[1],
+  #                                      ifelse(lake == "Kasumigaura" & res == "Monthly",dim(kas_mth_dat)[1],
+  #                                             ifelse(lake == "Windermere" & res == "Yearly",dim(wind_yr_dat)[1],
+  #                                                    ifelse(lake == "Windermere" & res == "Monthly",dim(wind_mth_dat)[1],
+  #                                                           ifelse(lake == "Mendota" & res == "Yearly",dim(mad_yr_dat)[1],
+  #                                                                  ifelse(lake == "Mendota" & res == "Monthly",dim(mad_mth_dat)[1],
+  #                                                                         ifelse(lake == "Lower Zurich" & res == "Yearly",dim(LZ_yr_dat)[1],dim(LZ_mth_dat)[1])))))))))] %>%
+  # .[,ts_length := scale(as.numeric(ts_length))] %>%
   .[,method_code := paste(variate,computation,sep = "_")] %>%
   .[,method_code := factor(method_code, levels = c("univariate_rolling","univariate_expanding","univariate_ML","multivariate_rolling","multivariate_expanding"))] %>%
   .[,computation := factor(computation, levels = c("rolling","expanding","ML"))] %>%
   .[,variate := factor(variate, levels = c("univariate","multivariate"))] %>%
-  .[,res := factor(res, levels = c("Yearly","Monthly"))] %>%
+  .[,res := factor(res, levels = c("Yearly","Monthly"))]
+
+computation_data <- all_ews_data %>%
   .[,offset := length(unique(data_source)), by =c("method_code","lake","res") ] %>% #trials in terms of assessed time series
   .[,offset2 := length(unique(data_source))*length(unique(metric.code)), by =c("method_code","lake","res")] %>% #trials in terms of assessed time series AND metrics 
   .[,.(total_success = sum(outcome),
        offset = unique(offset2),
-       ts_length = unique(ts_length),
+       #ts_length = unique(ts_length),
        variate = unique(variate)),by = c("lake", "res", "method_code")] %>%
   as.data.frame()
 
 ews.mod.trials.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code-1), 
-                        data = brms_data[brms_data$res == "Monthly",],
+                        data = computation_data[computation_data$res == "Monthly",],
                         iter = 10000,
                         thin = 0.0005*10000,
                         warmup = 0.1*10000,
@@ -201,7 +197,7 @@ ews.mod.trials.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method
                         seed = 12345, cores = 4,sample_prior = TRUE)
 
 ews.mod.trials.yr <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code -1), 
-                            data = brms_data[brms_data$res == "Yearly",],
+                            data = computation_data[computation_data$res == "Yearly",],
                             iter = 10000,
                             thin = 0.0005*10000,
                             warmup = 0.1*10000,
@@ -211,7 +207,7 @@ ews.mod.trials.yr <- brms::brm(brms::bf(total_success | trials(offset) ~ method_
                             control = list(adapt_delta = .975, max_treedepth = 20),
                             seed = 12345, cores = 4,sample_prior = TRUE)
 
-brms::mcmc_plot(ews.mod.trials.yr, 
+brms::mcmc_plot(ews.mod.trials.mth, 
                 type = "areas",
                 #type = "intervals",
                 prob = 0.95)

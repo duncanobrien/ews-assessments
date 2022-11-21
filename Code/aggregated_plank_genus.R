@@ -5,6 +5,8 @@ require(foreach)
 require(pbapply)
 
 source("Code/perm_rollEWS_fn.R") 
+transition_dates <- read.csv("Data/transition_dates.csv")[,-1] |>
+  filter(metric %in% c("phyto_density","zoo_density"))
 
 EWSmethods::ewsnet_init("EWSNET_env", auto=T)
 reticulate::py_config() #check for 'forced by use_python
@@ -42,15 +44,15 @@ source("/Users/ul20791/Desktop/Academia/PhD/Data/Washington/Data/washington_plan
 ################################################################################################################
 ## Wangle Data ##
 
-# save(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
-#      kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat,
-#     file =  "Data/wrangled_genus_plank_data.Rdata" )
+save(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
+     kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat,
+    file =  "Data/wrangled_genus_plank_data.Rdata" )
 
 #prewrangled load("Data/wrangled_genus_plank_data.Rdata")
 ################################################################################################################
 
 kin_yr_dat <- plank_env.data.yr |> #drop environmentals
-  dplyr::filter(as.numeric(Date) <= as.numeric(Date[25])) |>
+  dplyr::filter(as.numeric(Date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Kinneret"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(Date:`Anuraeopsis fissa`) |> #drop environmentals
   pivot_longer(-Date,names_to = "species",values_to = "density") |>
@@ -77,7 +79,7 @@ kin_yr_dat <- plank_env.data.yr |> #drop environmentals
   as.data.frame()
 
 kin_mth_dat <- plank_env.data.mth |> 
-  dplyr::filter(as.numeric(Date) <= as.numeric(Date[288])) |>
+  dplyr::filter(as.numeric(Date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Kinneret"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(Date:`Anuraeopsis fissa`) |>
   tidyr::pivot_longer(-Date,names_to = "species",values_to = "density") |>
@@ -105,7 +107,7 @@ kin_mth_dat <- plank_env.data.mth |>
   as.data.frame()
 
 kas_yr_dat <- plank_env.kasyrdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[16])) |>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Kasumigaura"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(date:Thermocyclops_taihokuensis) |> #drop environmentals
   pivot_longer(-date,names_to = "species",values_to = "density") |>
@@ -130,7 +132,7 @@ kas_yr_dat <- plank_env.kasyrdata |>
   as.data.frame()
 
 kas_mth_dat <- plank_env.kasmthdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[185])) |>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Kasumigaura"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(c(date,Acanthoceras_zachariasii:Thermocyclops_taihokuensis)) |> #drop environmentals
   pivot_longer(-date,names_to = "species",values_to = "density") |>
@@ -354,7 +356,7 @@ UZ_mth_dat <- plank_env.UZmthdata |>
   as.data.frame()
 
 mon_yr_dat <- plank_env.monyrdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[length(date)*0.85]))|>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Monona"])))|>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(date:TROPOCYCLOPS_PRASINUS_MEXICANUS) |> #drop environmentals
   pivot_longer(-date,names_to = "species",values_to = "density") |>
@@ -380,7 +382,7 @@ mon_yr_dat <- plank_env.monyrdata |>
   as.data.frame()
 
 mon_mth_dat <- plank_env.monmthdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[length(date)*0.85]))|>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Monona"])))|>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(date,`Achnanthes minutissima`:TROPOCYCLOPS_PRASINUS_MEXICANUS) |> #drop environmentals
   pivot_longer(-date,names_to = "species",values_to = "density") |>
@@ -395,7 +397,7 @@ mon_mth_dat <- plank_env.monmthdata |>
   ungroup() |>
   nest(data = everything())|>
   dplyr::mutate(tmp = purrr::map(data, ~.x |> 
-                                   dplyr::select(ACANTHOCYCLOPS:Woronichinia) %>%
+                                   dplyr::select(Achnanthes:TROPOCYCLOPS) %>%
                                    dplyr::select_if(colSums(.) != 0))) |>
   dplyr::mutate(pca1 = purrr::map(tmp, ~prcomp(.x,scale. = T)$x[,1]),
                 pca2 = purrr::map(tmp, ~prcomp(.x,scale. = T)$x[,2])) |>
@@ -462,7 +464,7 @@ leve_mth_dat <- plank_env.levemthdata |>
   as.data.frame()
 
 wash_yr_dat <- plank_env.washyrdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[length(date)*0.85])) |>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Washington"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(c(date,cryptomonas:nc.rotifers)) |> #drop environmentals
   #mutate(across(cryptomonas:nc.rotifers,~log1p(.x))) |>
@@ -479,7 +481,7 @@ wash_yr_dat <- plank_env.washyrdata |>
   as.data.frame()
 
 wash_mth_dat <- plank_env.washmthdata |> 
-  dplyr::filter(as.numeric(date) <= as.numeric(date[length(date)*0.85])) |>
+  dplyr::filter(as.numeric(date) <= as.numeric(na.omit(transition_dates$threshold_date[transition_dates$lake == "Washington"]))) |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   dplyr::select(c(date,cryptomonas:nc.rotifers)) |> #drop environmentals
   #mutate(across(cryptomonas:nc.rotifers,~log1p(.x))) |>
@@ -661,11 +663,10 @@ genus_lake_zoo_ewsnet <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas_yr_d
       grepl("mth", name) ~ "Monthly"),
     method = "EWSNet",
     computation = "ML") |>
-  mutate(troph_level = "zoooplankton")|>
+  mutate(troph_level = "zooplankton")|>
   select(-name)
 
 write.csv(genus_lake_zoo_ewsnet,file = "Results/lake_results/genus_lake_ewsnet_zoo.csv")
-
 
 ################################################################################################################
 ## Multivariate EWS Assessment Rolling ##

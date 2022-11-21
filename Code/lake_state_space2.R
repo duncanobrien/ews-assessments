@@ -2,6 +2,7 @@
 # Preamble
 #############################################################################
 require(tidyverse)
+require(foreach)
 
 source("/Users/ul20791/Desktop/Academia/PhD/Data/Kinneret/Data/kinneret_plankton_data.R")
 source("/Users/ul20791/Desktop/Academia/PhD/Data/Kinneret/Data/kinneret_environmental_data.R")
@@ -33,7 +34,7 @@ rm(list = ls()[!ls() %in% c("plank_env.data.mth","plank_env.data.yr","plank_env.
               "phyto_env.windmthdata","phyto_env.windyrdata")]
 )
 
-source("/Users/ul20791/Desktop/Academia/PhD/Repositories/ews-assessments/ews-assessments/Code/threshold_gam.R")
+source("Code/threshold_gam.R")
 
 
 #############################################################################
@@ -315,12 +316,18 @@ p_temporal <- ggplot(data = ss_time_plot_dat, aes(x=date,y=metric.val)) +
 #Compare State Spaces
 #############################################################################
 state_transition_dates <- subset(lake_state_space,transition == "trans") |>
-  rename(state_date = date)
+  rename(state_date = thresh.var)
 temporal_transition_dates <- subset(lake_temporal,transition == "trans") |>
   rename(temporal_date = date)
 
-transition_dates <- left_join(state_transition_dates,temporal_transition_dates,by = lake) |>
-  mutate(date_match = ifelse(state_date == temporal_date, TRUE, FALSE))
+transition_dates <- left_join(state_transition_dates,temporal_transition_dates,by = c("lake","metric")) |>
+  select(metric,lake,state_date,temporal_date) |>
+  group_by(metric,lake) |>
+  slice_head(n=1) |>
+  mutate(date_match = ifelse(state_date == temporal_date, TRUE, FALSE),
+         threshold_date = ifelse(isTRUE(date_match),state_date,NA))
+
+write.csv(transition_dates,"Data/transition_dates.csv")
 
 ggplot2::ggsave("/Users/ul20791/Downloads/lake_state_spaces.pdf",
        ggpubr::ggarrange(p_temporal + ggtitle("a) time series"),

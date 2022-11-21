@@ -58,7 +58,9 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "years"),
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "months")), 
           by = c("metric.code","lake","res")] %>%
-        data.table::setorder("lake","res","metric.code") # order results alphabetically
+        data.table::setorder("lake","res","metric.code") %>%# order results alphabetically
+        .[,data_source := NA]%>%
+        .[,.SD[1], by = c("data_source", "metric.code","lake","res")]
       
     }else{ # repeat but include data_source column
       
@@ -71,7 +73,8 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "years"),
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "months")), 
           by = c("data_source","metric.code","lake","res")] %>%
-        data.table::setorder("lake","res","data_source","metric.code")
+        data.table::setorder("lake","res","data_source","metric.code") %>%
+        .[,.SD[1], by = c("data_source", "metric.code","lake","res")]
     }
     
     out <- out %>% # match warning prediction to ground truth provided in 'outcome' argument
@@ -79,7 +82,7 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
                               ifelse(is.na(interval.prior) & is.na(first.ews) & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "miss",   
                                      ifelse((is.na(interval.prior) & is.na(first.ews) & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans")|interval.prior == 0, "match", 
                                             ifelse(interval.prior > 0 & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "prior", "post")))),
-        by = c("lake","res","metric.code")] 
+        by = c("lake","res","metric.code","troph_level")] 
     
   }else if(meth == "rolling"){
     
@@ -98,9 +101,9 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
           by = c("lake","res","data_source","metric.code")] # match warning prediction to ground truth
     }
     if(isTRUE(surrogate)){
-      
+
       out <- out %>%  
-        .[,perm := rep(c("obs","perm")),by = c("data_source","lake","res")] %>%
+        .[,perm := rep(c("obs","perm")),by = c("data_source","lake","res","troph_level")] %>%
         data.table::melt(.,measure.vars = colnames(out)[!grepl("data_source|res|lake|method|computation|perm|troph_level", colnames(out))],
                          variable.name = "metric.code", value.name = "metric.score") %>% # pivot EWS indicator correlations longer
         data.table::dcast(., data_source + lake + res + metric.code + method + computation + troph_level~ perm, value.var = "metric.score") %>% # and pivot back wider in to observed and permuted values
