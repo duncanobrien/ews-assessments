@@ -169,7 +169,6 @@ LZ_yr_dat <- plank_env.LZyrdata |>
   summarise(density = sum(density)) |>
   rename("genus" = key) |>
   pivot_wider(names_from = "genus",values_from  = "density") |>
-  mutate(across(Actinastrum:Willea,~log1p(.x))) |>
   ungroup() |>
   dplyr::select_if(~ !is.numeric(.) || sum(.) != 0) |>
   #mutate(across(Actinastrum:Willea,~log1p(.x))) |>
@@ -684,7 +683,7 @@ genus_lake_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_
                                              mean(sub_dat[,i] == min(sub_dat[,i])) <= 0.47
                                            })]
                                            
-                                           sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                           sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                            
                                            if(any(str_length(sub_dat_det[,1])>4)){
                                              sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -741,7 +740,7 @@ genus_lake_zoo_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],
                                                  })]
                                                  
                                                  
-                                                 sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                 sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                  
                                                  if(any(str_length(sub_dat_det[,1])>4)){
                                                    sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -797,7 +796,7 @@ genus_lake_phyto_roll_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],k
                                                        mean(x[,i] == min(x[,i])) <= 0.47 #0.47 required because of Chroococcus
                                                      })]
                                                      
-                                                     sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                     sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                      
                                                      if(any(str_length(sub_dat_det[,1])>4)){
                                                        sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -846,9 +845,9 @@ write.csv(genus_lake_phyto_roll_multi_ews,file = "Results/lake_results/genus_lak
 ################################################################################################################
 
 genus_lake_roll_multi_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
-                                                         wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
-                                                         kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,
-                                                         wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat),
+                                                             wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
+                                                             kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,
+                                                              wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat),
                                                   FUN = function(x){
                                                     
                                                     sub_dat <- subset(x,select=-c(pca1,pca2))
@@ -857,7 +856,7 @@ genus_lake_roll_multi_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_d
                                                       mean(sub_dat[,i] == min(sub_dat[,i])) <= 0.47
                                                     })]
 
-                                                      sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                      sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                       
                                                       if(any(str_length(sub_dat_det[,1])>4)){
                                                         sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -878,7 +877,7 @@ genus_lake_roll_multi_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_d
                                                                                 iter = 500)
                                                       
                                                       return(data.frame(cbind(out.det$cor,out.undet$cor)))
-                                                  },mc.cores = parallel::detectCores()-2) |>
+                                                  },mc.cores = parallel::detectCores()-3) |>
   `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
               "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
@@ -909,10 +908,10 @@ genus_lake_zoo_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,c(
                                                           FUN = function(x){
                                                             
                                                             sub_dat <- x[sapply(colnames(x),FUN = function(i){
-                                                              mean(x[,i] == min(x[,i])) <= 0.47
+                                                              mean(x[,i] == min(x[,i])) <= 0.46
                                                             })]
                                                             
-                                                            sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                            sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                             
                                                             if(any(str_length(sub_dat_det[,1])>4)){
                                                               sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -934,7 +933,7 @@ genus_lake_zoo_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,c(
                                                             
                                                             return(data.frame(cbind(out.det$cor,out.undet$cor)))
                                                             
-                                                          },mc.cores = parallel::detectCores()-2) |>
+                                                          },mc.cores = parallel::detectCores()-3) |>
   `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
               "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
@@ -968,7 +967,7 @@ genus_lake_phyto_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,
                                                         mean(x[,i] == min(x[,i])) <= 0.47
                                                       })]
                                                       
-                                                      sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                      sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                       
                                                       if(any(str_length(sub_dat_det[,1])>4)){
                                                         sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -990,7 +989,7 @@ genus_lake_phyto_roll_multi_ews_perm <-  pbmcapply::pbmclapply(list(kin_yr_dat[,
                                                       
                                                       return(data.frame(cbind(out.det$cor,out.undet$cor)))
                                                       
-                                                    },mc.cores = parallel::detectCores()-2) |>
+                                                    },mc.cores = parallel::detectCores()-3) |>
   `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
               "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
@@ -1030,7 +1029,7 @@ genus_lake_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_d
                                             mean(sub_dat[,i] == min(sub_dat[,i])) <= 0.47
                                           })]
 
-                                          sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                          sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                           
                                           if(any(str_length(sub_dat_det[,1])>4)){
                                             sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -1083,7 +1082,7 @@ genus_lake_phyto_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],ka
                                                       mean(x[,i] == min(x[,i])) <= 0.47
                                                     })]
                                                     
-                                                    sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                    sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                     
                                                     if(any(str_length(sub_dat_det[,1])>4)){
                                                       sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -1137,7 +1136,7 @@ genus_lake_zoo_exp_multi_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],k
                                                   mean(x[,i] == min(x[,i])) <= 0.47
                                                 })]
                                                 
-                                                sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "loess",span = 0.75,degree=1) 
+                                                sub_dat_det <- EWSmethods::detrend_ts(sub_dat,method = "gaussian",span = 0.75,degree=1) 
                                                 
                                                 if(any(str_length(sub_dat_det[,1])>4)){
                                                   sub_dat_det[,1] <- zoo::as.Date(zoo::as.yearmon(sub_dat_det[,1]))
@@ -1194,7 +1193,7 @@ genus_lake_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_da
                                          
                                          x <- subset(x, select=-c(pca1,pca2))
                                          
-                                         x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                         x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                          
                                          if(any(str_length(x[,1])>4)){
                                            x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1242,7 +1241,7 @@ genus_lake_phyto_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas
                                                         wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                              FUN = function(x){
                                                
-                                               x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                               x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                                
                                                if(any(str_length(x[,1])>4)){
                                                  x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1289,7 +1288,7 @@ genus_lake_zoo_roll_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],ka
                                                       wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                    FUN = function(x){
                                                      
-                                                     x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                                     x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                                      
                                                      if(any(str_length(x[,1])>4)){
                                                        x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1342,7 +1341,7 @@ genus_lake_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_dat
                                             FUN = function(x){
                                               
                                               x <- subset(x, select=-c(pca1,pca2))
-                                              x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                              x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                               
                                               if(any(str_length(x[,1])>4)){
                                                 x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1351,7 +1350,7 @@ genus_lake_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_dat
                                               
                                               time_vec <- colnames(x)[1]
                                               
-                                              foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %dopar%{
+                                              foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %do%{
 
                                                 out <- perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
                                                                     winsize = 50, perm.meth = "replacement", variate = "uni",
@@ -1359,7 +1358,7 @@ genus_lake_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat,kas_yr_dat
                                                 
                                                 data.frame(cbind(data_source = paste(i), out$cor))
                                               } 
-                                            },mc.cores = parallel::detectCores()-2) |>
+                                            },mc.cores = parallel::detectCores()-3) |>
   `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
               "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
@@ -1388,7 +1387,7 @@ genus_lake_phyto_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1
                                                                  wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                                  FUN = function(x){
                                                    
-                                                   x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                                   x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                                    
                                                    if(any(str_length(x[,1])>4)){
                                                      x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1397,7 +1396,7 @@ genus_lake_phyto_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1
                                                    
                                                    time_vec <- colnames(x)[1]
                                                    
-                                                   foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %dopar%{
+                                                   foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %do%{
                                                      
                                                      out <- perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
                                                                          winsize = 50, perm.meth = "replacement", variate = "uni",
@@ -1435,7 +1434,7 @@ genus_lake_zoo_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1,2
                                                                wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                         FUN = function(x){
                                                           
-                                                          x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                                          x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                                           
                                                           if(any(str_length(x[,1])>4)){
                                                             x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1444,7 +1443,7 @@ genus_lake_zoo_roll_uni_ews_perm <- pbmcapply::pbmclapply(list(kin_yr_dat[,c(1,2
                                                           
                                                           time_vec <- colnames(x)[1]
                                                           
-                                                          foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %dopar%{
+                                                          foreach(i=colnames(x[,-1]), .combine='rbind',.export = "perm_rollEWS",.verbose = F) %do%{
                                                             
                                                             out <- perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
                                                                                 winsize = 50, perm.meth = "replacement", variate = "uni",
@@ -1487,7 +1486,7 @@ genus_lake_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat
                                       FUN = function(x){
                                         
                                         x <- subset(x, select=-c(pca1,pca2))
-                                        x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                        x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                         
                                         if(any(str_length(x[,1])>4)){
                                           x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1534,7 +1533,7 @@ genus_lake_phyto_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1:28)],kas_
                                                        wind_mth_dat[,c(1:18)],wash_mth_dat[,c(1:7)],leve_mth_dat[,c(1:5)],UZ_mth_dat[,c(1:61)],mon_mth_dat[,c(1:82)]),
                                             FUN = function(x){
                                               
-                                              x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                              x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                               
                                               if(any(str_length(x[,1])>4)){
                                                 x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
@@ -1582,7 +1581,7 @@ genus_lake_zoo_exp_uni_ews <- pbapply::pblapply(list(kin_yr_dat[,c(1,29:50)],kas
                                                      wind_mth_dat[,c(1,19:23)],wash_mth_dat[,c(1,8:16)],leve_mth_dat[,c(1,6:7)],UZ_mth_dat[,c(1,62:79)],mon_mth_dat[,c(1,83:99)]),
                                                   FUN = function(x){
                                                     
-                                                    x <- EWSmethods::detrend_ts(x,method = "loess",span = 0.75)                                           
+                                                    x <- EWSmethods::detrend_ts(x,method = "gaussian",span = 0.75)                                           
                                                     
                                                     if(any(str_length(x[,1])>4)){
                                                       x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))

@@ -177,12 +177,14 @@ all_ews_data <- as.data.table(ewsnet_diff_df) %>%
   .[,res := factor(res, levels = c("Yearly","Monthly"))]
 
 computation_data <- all_ews_data %>%
-  .[,offset := length(unique(data_source)), by =c("method_code","lake","res") ] %>% #trials in terms of assessed time series
-  .[,offset2 := length(unique(data_source))*length(unique(metric.code)), by =c("method_code","lake","res")] %>% #trials in terms of assessed time series AND metrics 
+  .[,offset := length(unique(data_source)), by =c("method_code","lake","res","troph_level") ] %>% #trials in terms of assessed time series
+  .[,offset2 := length(unique(data_source))*length(unique(metric.code)), by =c("method_code","lake","res""troph_level")] %>% #trials in terms of assessed time series AND metrics 
   .[,.(total_success = sum(outcome),
        offset = unique(offset2),
        #ts_length = unique(ts_length),
-       variate = unique(variate)),by = c("lake", "res", "method_code")] %>%
+       variate = unique(variate),
+       reference = paste(lake,res,troph_level,sep="_")),by = c("lake", "res", "method_code","troph_level")] %>%
+  merge(.,as.data.table(lake_outcome_troph),by="reference") %>%
   as.data.frame()
 
 ews.mod.trials.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code-1), 
@@ -191,7 +193,7 @@ ews.mod.trials.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method
                         thin = 0.0005*10000,
                         warmup = 0.1*10000,
                         prior= c(prior(normal(0, 1), class = b)),
-                        family = binomial(link = "probit"), 
+                        family = binomial(link = "logit"), 
                         chains = 4,
                         control = list(adapt_delta = .975, max_treedepth = 20),
                         seed = 12345, cores = 4,sample_prior = TRUE)
