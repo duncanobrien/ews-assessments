@@ -91,7 +91,7 @@ rollmultiews_diff_perm_df <- extract_ews_pred(ews.data = genus_lake_roll_multi_e
                                               method = "rolling",
                                               surrogate = T)
 
-expmultiews_diff_df <- extract_ews_pred(genus_lake_exp_multi_ews,
+expmultiews_diff_df <- extract_ews_pred(ews.data = genus_lake_exp_multi_ews,
                                         sensitivity = 2,
                                         outcome = lake_outcome_troph,
                                         method = "expanding")

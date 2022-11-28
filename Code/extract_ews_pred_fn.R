@@ -52,15 +52,19 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
       out <- out[,first.ews := time[rep(rle(threshold.crossed)$lengths >= sensitivity & 
                                           rle(threshold.crossed)$value == 1,
                                         times = rle(threshold.crossed)$lengths)][1], 
-                 by = c("metric.code","lake","res")] %>% # find where a run of 'sensitivity' consecutive signals are flashed
+                 by = c("metric.code","lake","res","troph_level")] %>% # find where a run of 'sensitivity' consecutive signals are flashed
+        {suppressWarnings(.[,longest_run := max(rle(threshold.crossed)$lengths[rle(threshold.crossed)$value == 1]),
+                            by = c("metric.code","lake","res","troph_level")])} %>%
+        .[,longest_run := ifelse(is.na(longest_run)|longest_run == -Inf,0,longest_run)] %>%
+        .[,prop_run := longest_run/.N, by = c("metric.code","lake","res","troph_level")]%>%
         .[,interval.prior := # find difference between end of time series and where 'warning' found
             ifelse(res == "yearly",
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "years"),
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "months")), 
-          by = c("metric.code","lake","res")] %>%
-        data.table::setorder("lake","res","metric.code") %>%# order results alphabetically
+          by = c("metric.code","lake","res","troph_level")] %>%
+        data.table::setorder("lake","res","metric.code","troph_level") %>%# order results alphabetically
         .[,data_source := NA]%>%
-        .[,.SD[1], by = c("data_source", "metric.code","lake","res")]
+        .[,.SD[1], by = c("data_source", "metric.code","lake","res","troph_level")]
       
     }else{ # repeat but include data_source column
       
@@ -68,6 +72,10 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
                                           rle(threshold.crossed)$value == 1,
                                         times = rle(threshold.crossed)$lengths)][1], 
                  by = c("data_source","metric.code","lake","res")] %>%
+        {suppressWarnings(.[,longest_run := max(rle(threshold.crossed)$lengths[rle(threshold.crossed)$value == 1]),
+          by = c("data_source","metric.code","lake","res")])} %>%
+        .[,longest_run := ifelse(is.na(longest_run)|longest_run == -Inf,0,longest_run)] %>%
+        .[,prop_run := longest_run/.N, by = c("data_source","metric.code","lake","res")]%>%
         .[,interval.prior := 
             ifelse(res == "yearly",
                    lubridate::time_length(lubridate::interval(data.table::last(first.ews), data.table::last(time)), "years"),
