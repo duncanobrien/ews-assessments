@@ -1,21 +1,37 @@
 "","metric","lake","state_date","temporal_date","date_match","threshold_date"
 "1","community","Kasumigaura",2009,2009,TRUE,2009
 "2","community","Kinneret",1998,1998,TRUE,1998
-"3","community","Lower Zurich",2002,2002,TRUE,2002
-"4","community","Mendota",2012,2012,TRUE,2012
-"5","community","Monona",2012,2013,FALSE,NA
-"6","community","Upper Zurich",1994,1990,FALSE,NA
-"7","community","Washington",1975,1975,TRUE,1975
-"8","phyto_density","Kasumigaura",1997,2004,FALSE,NA
-"9","phyto_density","Kinneret",1994,1994,TRUE,1994
-"10","phyto_density","Monona",2013,2011,FALSE,NA
-"11","phyto_density","Washington",1970,1970,TRUE,1970
-"12","tot_density","Kasumigaura",2008,1993,FALSE,NA
-"13","tot_density","Kinneret",1995,1994,FALSE,NA
-"14","tot_density","Lower Zurich",2001,2001,TRUE,2001
-"15","tot_density","Mendota",2012,2001,FALSE,NA
-"16","tot_density","Upper Zurich",1996,NA,NA,NA
-"17","zoo_density","Kasumigaura",2010,2010,TRUE,2010
-"18","zoo_density","Kinneret",1982,1994,FALSE,NA
-"19","zoo_density","Monona",2010,2010,TRUE,2010
-"20","zoo_density","Washington",1986,1988,FALSE,NA
+"3","community","Loch Leven",NA,NA,NA,NA
+"4","community","Lower Zurich",2002,2002,TRUE,2002
+"5","community","Mendota",2012,2012,TRUE,2012
+"6","community","Monona",2012,2013,FALSE,NA
+"7","community","Upper Zurich",1994,1990,FALSE,NA
+"8","community","Washington",1975,1975,TRUE,1975
+"9","community","Windermere",NA,NA,NA,NA
+"10","phyto_density","Kasumigaura",1997,2004,FALSE,NA
+"11","phyto_density","Kinneret",1994,1994,TRUE,1994
+"12","phyto_density","Loch Leven",NA,1994,NA,NA
+"13","phyto_density","Lower Zurich",NA,NA,NA,NA
+"14","phyto_density","Mendota",NA,NA,NA,NA
+"15","phyto_density","Monona",2013,2011,FALSE,NA
+"16","phyto_density","Upper Zurich",NA,NA,NA,NA
+"17","phyto_density","Washington",1970,1970,TRUE,1970
+"18","phyto_density","Windermere",NA,NA,NA,NA
+"19","tot_density","Kasumigaura",2008,1993,FALSE,NA
+"20","tot_density","Kinneret",1995,1994,FALSE,NA
+"21","tot_density","Loch Leven",NA,NA,NA,NA
+"22","tot_density","Lower Zurich",2001,2001,TRUE,2001
+"23","tot_density","Mendota",2012,2001,FALSE,NA
+"24","tot_density","Monona",NA,2011,NA,NA
+"25","tot_density","Upper Zurich",1996,NA,NA,NA
+"26","tot_density","Washington",NA,NA,NA,NA
+"27","tot_density","Windermere",NA,NA,NA,NA
+"28","zoo_density","Kasumigaura",2010,2010,TRUE,2010
+"29","zoo_density","Kinneret",1982,1994,FALSE,NA
+"30","zoo_density","Loch Leven",NA,NA,NA,NA
+"31","zoo_density","Lower Zurich",NA,1984,NA,NA
+"32","zoo_density","Mendota",NA,2001,NA,NA
+"33","zoo_density","Monona",2010,2010,TRUE,2010
+"34","zoo_density","Upper Zurich",NA,1984,NA,NA
+"35","zoo_density","Washington",1986,1988,FALSE,NA
+"36","zoo_density","Windermere",NA,1985,NA,NA

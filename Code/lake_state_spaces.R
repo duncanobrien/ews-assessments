@@ -3,6 +3,7 @@
 #############################################################################
 require(tidyverse)
 require(foreach)
+require(patchwork)
 
 source("/Users/ul20791/Desktop/Academia/PhD/Data/Kinneret/Data/kinneret_plankton_data.R")
 source("/Users/ul20791/Desktop/Academia/PhD/Data/Kinneret/Data/kinneret_environmental_data.R")
@@ -312,6 +313,195 @@ p_temporal <- ggplot(data = ss_time_plot_dat, aes(x=date,y=metric.val)) +
   scale_colour_manual(values = c("blue","red","#FFE823"),breaks = c("Start date", "End date", "Transition\ndates","1993"), name = NULL) +
   scale_x_continuous(breaks=seq(1970,2015,by=15),limits = c(1960,2020))
 
+
+#############################################################################
+#TGAM Figure 1
+#############################################################################
+lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                                           state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
+                                  .combine = "rbind") %do% {
+                                    
+                                    lapply(c("tot_density","phyto_density","zoo_density","community"), 
+                                           FUN = function(i){
+                                             
+                                             cont_formula <-  as.formula(paste(i,"~ s(date, bs='tp', k=3)"))
+                                             thresh_formula <- as.formula(paste(i,"~ 1"))
+                                             dens_gam <- compare_gam(data = j,
+                                                                     cont_formula = formula(cont_formula, method = "REML"),
+                                                                     thresh_formula =  formula(thresh_formula, method = "REML"),
+                                                                     thresh.var = "date",
+                                                                     thresh.range = c(0.15,0.85), by = 1, k=3)
+                                             
+                                             best_gam <- predict_best_gam(object=dens_gam) %>%
+                                               dplyr::rename("metric.val" = i) 
+                                             
+                                             return(best_gam)
+                                             
+                                           }) |> `names<-`(c("tot_density","phyto_density","zoo_density","community")) |>
+                                      data.table::rbindlist(idcol = "metric",use.names = T) |>
+                                      dplyr::mutate(threshold = tidyr::replace_na(as.character(threshold),"pre"),
+                                                    start.date = dplyr::first(thresh.var),
+                                                    last.date = dplyr::last(thresh.var),
+                                                    lake = j$lake[1]
+                                      )
+                                  }
+
+ss_time_plot_dat1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density") & 
+                              lake %in% c("Kinneret","Windermere")) |>
+  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                                              state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
+                                     .combine = "rbind") %do% {
+                                       
+                                       lapply(c("tot_density","phyto_density","zoo_density","community"), 
+                                              FUN = function(i){
+                                                
+                                                cont_formula <-  as.formula(paste(i,"~ s(env, bs='tp', k=3)"))
+                                                thresh_formula <- as.formula(paste(i,"~ 1"))
+                                                dens_gam <- compare_gam(data = j,
+                                                                        cont_formula = formula(cont_formula, method = "REML"),
+                                                                        thresh_formula =  formula(thresh_formula, method = "REML"),
+                                                                        thresh.var = "date", expl.var = "env",
+                                                                        thresh.range = c(0.15,0.85), by = 1, k=3)
+                                                
+                                                best_gam <- predict_best_gam(object=dens_gam) %>%
+                                                  dplyr::rename("metric.val" = i) 
+                                                
+                                                return(best_gam)
+                                                
+                                              }) |> `names<-`(c("tot_density","phyto_density","zoo_density","community")) |>
+                                         data.table::rbindlist(idcol = "metric",use.names = T) |>
+                                         dplyr::mutate(threshold = tidyr::replace_na(as.character(threshold),"pre"),
+                                                       start.date = dplyr::first(thresh.var),
+                                                       last.date = dplyr::last(thresh.var),
+                                                       lake = j$lake[1]
+                                         )
+                                     }
+ss_plot_dat1 <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density") & 
+                         lake %in% c("Kinneret","Windermere")) |>
+  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+fig1_plot_dat <- rbind(ss_plot_dat1 |>
+                pivot_longer(env,names_to = "var_metric",values_to = "var.value") |>
+                mutate(var.value = var.value/2), #shrink for plotting purposes
+              ss_time_plot_dat1|>
+                pivot_longer(date,names_to = "var_metric",values_to = "var.value")) |>
+  mutate(var_metric = factor(ifelse(var_metric == "env","Environment","Year"),levels = c("Year","Environment")))
+
+
+fig1 <- ggplot(data = fig1_plot_dat, aes(x=var.value,y=metric.val)) + 
+  geom_point(aes(x=var.value, y = metric.val))+
+  geom_path(aes(x=var.value, y = metric.val)) +  
+  xlab("Expanatory variable") + ylab("Scaled metric score")+ 
+  ggh4x::facet_nested(lake + metric ~var_metric,scales = "free_x",
+                      labeller = label_value,
+                      switch = "x",
+                      strip = ggh4x::strip_nested(size="constant",bleed=F, 
+                                                  background_y = ggh4x::elem_list_rect(fill = c("#D6D6D6","#D6D6D6",rep("white",4))),
+                                                  background_x = ggh4x::elem_list_rect(fill = c(rep("white",2))),
+                                                  by_layer_y = F)) +
+  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Environment"),aes(x=var.value,y=fit), col="blue",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Environment"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(x=var.value,y=fit), col="red",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_point(data = filter(fig1_plot_dat, thresh.var == start.date & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="Start date"))+
+  geom_point(data = filter(fig1_plot_dat, thresh.var == last.date & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="End date"))+
+  geom_point(data = filter(fig1_plot_dat,transition == "trans" & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="Transition\ndates"))+
+  ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Phytoplankton" & var_metric == "Environment"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=1.5,nudge_y=-0.25,segment.linetype=2,min.segment.length = 0.1)+
+  ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Zooplankton" & var_metric == "Environment"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=-1.5,nudge_y=0.5,segment.linetype=2,min.segment.length = 0.1)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Year"),aes(x=var.value,y=fit), col="blue",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Year"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(x=var.value,y=fit), col="red",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_point(data = filter(fig1_plot_dat, thresh.var == start.date & var_metric == "Year"),aes(x=var.value, y = metric.val,col="Start date"))+
+  geom_point(data = filter(fig1_plot_dat, thresh.var == last.date & var_metric == "Year"),aes(x=var.value, y = metric.val,col="End date"))+
+  geom_point(data = filter(fig1_plot_dat,transition == "trans" & var_metric == "Year"),aes(x=var.value, y = metric.val,col="Transition\ndates"))+
+  ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Phytoplankton" & var_metric == "Year"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=1.5,nudge_y=-0.75,segment.linetype=2,min.segment.length = 0.1)+
+  ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Zooplankton" & var_metric == "Year"), aes(x=var.value, y = metric.val,label=thresh.var),force =1.5,nudge_x=-7.5,nudge_y=0.25,segment.linetype=2,min.segment.length = 0.1)+
+  scale_colour_manual(values = c("blue","red","#FFE823"),breaks = c("Start date", "End date", "Transition\ndates"), name = NULL, guide = guide_legend(override.aes = list(size = 5))) +
+  theme_classic() +
+  theme(legend.text=element_text(size=12),
+        strip.background.x = element_rect(linewidth = 0),
+        strip.placement.y = "outside",
+        legend.position = "top",
+        panel.border = element_rect(linewidth = 1,fill = "transparent"))
+
+ggplot2::ggsave("/Users/ul20791/Desktop/Academia/Papers/OBrien_et_al_PlankEWS/lake_state_spaces_fig.png",
+                fig1,
+                width = 6,height=6.5,dpi=200)
+
+
+p_temporal1 + 
+  p_env1 +  
+  patchwork::plot_layout(guides = 'collect') + 
+  plot_annotation(tag_levels = 'A')
+
+#############################################################################
+#TGAM Figure Supp 1
+#############################################################################
+ss_time_plot_datS1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density")) |>
+  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+ss_plot_datS1 <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density")) |>
+  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+p_temporalS1 <- ggplot(data = ss_time_plot_datS1, aes(x=date,y=metric.val)) + 
+  geom_point(aes(x=date, y = metric.val))+
+  geom_path(aes(x=date, y = metric.val)) +  
+  xlab("Year") + ylab("Scaled metric score")+ 
+  theme_bw() + 
+  facet_grid(metric~lake,scales = "free_y") +
+  geom_line(data = filter(ss_time_plot_datS1, threshold=="pre"),aes(x=date,y=fit), col="blue",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(ss_time_plot_datS1, threshold=="pre"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(ss_time_plot_datS1, threshold=="post"),aes(x=date,y=fit), col="red",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(ss_time_plot_datS1, threshold=="post"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_point(data = filter(ss_time_plot_datS1,date == start.date),aes(x=date, y = metric.val,col="Start date"))+
+  geom_point(data = filter(ss_time_plot_datS1,date == last.date),aes(x=date, y = metric.val,col="End date"))+
+  geom_point(data = filter(ss_time_plot_datS1,transition == "trans"),aes(x=date, y = metric.val,col="Transition\ndates"))+
+  ggrepel::geom_text_repel(data = filter(ss_time_plot_datS1,transition == "trans" & !(lake == "Windermere" & metric == "Zooplankton")), aes(x=date, y = metric.val,label=thresh.var),force =1,nudge_x=3,nudge_y=-0.5,segment.linetype=2)+
+  ggrepel::geom_text_repel(data = filter(ss_time_plot_datS1,transition == "trans"& lake == "Windermere" & metric == "Zooplankton"), aes(x=date, y = metric.val,label=thresh.var),force =1,nudge_x=-1.5,nudge_y=-0.25,segment.linetype=2)+
+  scale_colour_manual(values = c("blue","red","#FFE823"),breaks = c("Start date", "End date", "Transition\ndates","1993"), name = NULL, guide = guide_legend(override.aes = list(size = 5)))+  
+  scale_x_continuous(breaks=seq(1970,2015,by=15),limits = c(1960,2020))+
+  theme_classic() +
+  theme(legend.text=element_text(size=12),
+        strip.background = element_rect(fill = "#D6D6D6"),
+        strip.placement.y = "outside",
+        legend.position = "top",
+        panel.border = element_rect(linewidth = 1,fill = "transparent"))
+
+p_envS1 <- ggplot(data = ss_plot_datS1, aes(x=env,y=metric.val)) + 
+  geom_point(aes(x=env, y = metric.val))+
+  geom_path(aes(x=env, y = metric.val)) +  
+  xlab("Environmental stressor") + ylab("Scaled metric score")+ 
+  theme_bw() + 
+  facet_grid(metric~lake,scales = "free_y") +
+  geom_line(data = filter(ss_plot_datS1, threshold=="pre"),aes(x=env,y=fit), col="blue",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(ss_plot_datS1, threshold=="pre"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(ss_plot_datS1, threshold=="post"),aes(x=env,y=fit), col="red",size=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(ss_plot_datS1, threshold=="post"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_point(data = filter(ss_plot_datS1, thresh.var == start.date),aes(x=env, y = metric.val,col="Start date"))+
+  geom_point(data = filter(ss_plot_datS1, thresh.var == last.date),aes(x=env, y = metric.val,col="End date"))+
+  geom_point(data = filter(ss_plot_datS1,transition == "trans"),aes(x=env, y = metric.val,col="Transition\ndates"))+
+  ggrepel::geom_text_repel(data = filter(ss_plot_datS1,transition == "trans" & metric == "Phytoplankton"), aes(x=env, y = metric.val,label=thresh.var),force =1,nudge_x=1.5,nudge_y=-0.25,segment.linetype=2)+
+  ggrepel::geom_text_repel(data = filter(ss_plot_datS1,transition == "trans" & metric == "Zooplankton"), aes(x=env, y = metric.val,label=thresh.var),force =1,nudge_x=-1.5,segment.linetype=2)+
+  scale_colour_manual(values = c("blue","red","#FFE823"),breaks = c("Start date", "End date", "Transition\ndates","1993"), name = NULL, guide = guide_legend(override.aes = list(size = 5)))+  
+  xlim(-6,6) +
+  theme_classic() +
+  theme(legend.text=element_text(size=12),
+        strip.background = element_rect(fill = "#D6D6D6"),
+        strip.placement.y = "outside",
+        legend.position = "top",
+        panel.border = element_rect(linewidth = 1,fill = "transparent"))
+
+
+ggplot2::ggsave("/Users/ul20791/Desktop/Academia/Papers/OBrien_et_al_PlankEWS/lake_state_spaces_supp_fig.png",
+                ggpubr::ggarrange(p_temporalS1 + ggtitle("Time series"),
+                                  p_envS1 +  ggtitle("State space"),
+                                  labels="AUTO",font.label = list(face="plain"),
+                                  common.legend = T,ncol=1,nrow=2,legend = "top")
+                ,width = 16,height=9,dpi=300)
+
 #############################################################################
 #Compare State Spaces
 #############################################################################
@@ -320,8 +510,12 @@ state_transition_dates <- subset(lake_state_space,transition == "trans") |>
 temporal_transition_dates <- subset(lake_temporal,transition == "trans") |>
   rename(temporal_date = date)
 
-transition_dates <- left_join(state_transition_dates,temporal_transition_dates,by = c("lake","metric")) |>
-  select(metric,lake,state_date,temporal_date) |>
+transition_dates <-expand.grid(metric = unique(c(lake_state_space$metric,lake_temporal$metric)),
+              lake = unique(c(lake_state_space$lake,lake_temporal$lake))) |>
+  left_join(state_transition_dates |>
+            select(metric,lake,state_date),by = c("lake","metric")) |>
+  left_join(temporal_transition_dates |>
+            select(metric,lake,temporal_date),by = c("lake","metric")) |>
   group_by(metric,lake) |>
   slice_head(n=1) |>
   mutate(date_match = ifelse(state_date == temporal_date, TRUE, FALSE),

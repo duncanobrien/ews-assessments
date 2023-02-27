@@ -10,7 +10,7 @@
 #' @returns A dataframe modifying \code{ews.data} with whether a threshold has been crossed `$threshold.crossed` and if that matches the expectations of \code{outcome} (\code{$prediction}).
 #'
 
-perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter = 500, variate ="uni"){
+perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter = 500, variate ="uni",...){
   
   red.noise.ts <- function(ts,lag,length){
     x  <- rep(NA, length)
@@ -58,6 +58,11 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
     for (perm in seq_len(iter)){ # for each permutation randomly sample from ts with replacement at each time point
       new_col_name <- paste0("perm_", perm) # new column and colname for each permutation
       perm.df[,new_col_name] <- sample(x = data[,2],replace = F,size = length(data[,1]))
+      while( any(rle(perm.df[,new_col_name])$lengths >= floor(length(perm.df[,new_col_name])*(winsize/100)))){ #if ts contains many zeroes or runs to prevent svd, prevent the sampling with replacement 
+      #while(mean( perm.df[,new_col_name] == min( perm.df[,new_col_name])) > 0.47 ){
+          
+        perm.df[,new_col_name] <- sample(x = data[,2],replace = F,size = length(data[,1]))
+      }
       }
   
   }
@@ -65,11 +70,19 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
   true.ews <- EWSmethods::uniEWS(perm.df[,c(1,2)],metrics =metrics,method = "rolling",ggplotIt = F,
                                                winsize = winsize)
   
-  perm.ews <- lapply(3:dim(perm.df)[2],FUN = function(i){
-    ews.roll <- EWSmethods::uniEWS(perm.df[,c(1,i)],metrics =metrics,method = "rolling",ggplotIt = F,
-                              winsize = winsize)
+  # perm.ews <- pbapply::pblapply(3:dim(perm.df)[2],FUN = function(i){
+  #   ews.roll <- EWSmethods::uniEWS(perm.df[,c(1,i)],metrics =metrics,method = "rolling",ggplotIt = F,
+  #                             winsize = winsize)
+  #   return(ews.roll$cor)
+  # },...)
+  
+  perm.ews <- pbmcapply::pbmclapply(3:dim(perm.df)[2],FUN = function(i){
+    ews.roll <- tryCatch({EWSmethods::uniEWS(perm.df[,c(1,i)],metrics =metrics,method = "rolling",ggplotIt = F,
+                                   winsize = winsize)},error = function(err){
+                                     return(list(cor = -Inf))
+                                   })
     return(ews.roll$cor)
-  })
+  },...)
   
   }else if(variate == "multi"){
 
@@ -91,7 +104,7 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
         sapply(2:dim(data)[2], function(i){
           d1.ar1 <- tryCatch({stats::arima(stats::as.ts(data[,i]), order = c(1, 0, 0),optim.control = list(maxit = 1000),method="ML")$coef[1]
           },error = function(err){return(0)})
-          red.noise.ts(data[,i],lag=d1.ar1,length=length(data[,1]))
+          red.noise.ts(ts = data[,i],lag=d1.ar1,length=length(data[,1]))
         })
       })
       
@@ -102,7 +115,7 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
       perm.ls <- lapply(1:iter,FUN = function(perm){
         sapply(2:dim(data)[2], function(i){
           s_out <- sample(x = data[,i],replace = F,size = length(data[,1]))
-          while(mean(s_out == min(s_out)) > 0.47){ #if ts contains many zeroes, prevent the sampling with replacement 
+          while(mean(s_out == min(s_out)) > 0.47 | any(rle(s_out)$lengths >= floor(length(s_out)*0.5))){ #if ts contains many zeroes or runs to prevent svd, prevent the sampling with replacement 
             s_out <- sample(x = data[,i],replace = F,size = length(data[,1]))
           }
           return(s_out)
@@ -114,11 +127,26 @@ perm_rollEWS<- function(data, metrics, winsize = 50, perm.meth = "arima", iter =
     true.ews <- EWSmethods::multiEWS(data,metrics =metrics,method = "rolling",ggplotIt = F,
                                    winsize = winsize)
     
-    perm.ews <- lapply(1:length(perm.ls),FUN = function(i){
-      ews.roll <- EWSmethods::multiEWS(cbind(data[,1],perm.ls[[i]]),metrics =metrics,method = "rolling",ggplotIt = F,
-                                     winsize = winsize)
+    # perm.ews <-  pbapply::pblapply(1:length(perm.ls),FUN = function(i){
+    #   ews.roll <- EWSmethods::multiEWS(cbind(data[,1],perm.ls[[i]]),metrics =metrics,method = "rolling",ggplotIt = F,
+    #                                  winsize = winsize)
+    #   return(ews.roll$cor)
+    # },...)
+    
+    # perm.ews <-  pbmcapply::pbmclapply(1:length(perm.ls),FUN = function(i){
+    #   ews.roll <- EWSmethods::multiEWS(cbind(data[,1],perm.ls[[i]]),metrics =metrics,method = "rolling",ggplotIt = F,
+    #                                    winsize = winsize)
+    #   return(ews.roll$cor)
+    # },...)
+    
+    perm.ews <-  pbmcapply::pbmclapply(1:length(perm.ls),FUN = function(i){
+      #print(i)
+      ews.roll <- tryCatch({EWSmethods::multiEWS(cbind(data[,1],perm.ls[[i]]),metrics =metrics,method = "rolling",ggplotIt = F,
+                                       winsize = winsize)},error = function(err){
+                                         return(list(cor = -Inf))
+                                       })
       return(ews.roll$cor)
-    })
+    },...)
     
   }
   perm.ews <- do.call("rbind",perm.ews)

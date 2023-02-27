@@ -69,10 +69,10 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL , thresh.r
 #' \code{"expl.var"} to threshold between.
 #' @param by Numeric. The increment to step along `thresh.var`
 #' when introducing thresholds.
-#' @param k Numeric. The number of knots for the treshold smooth.
+#' @param k Numeric. The number of knots for the threshold smooth.
 #' Knot value for other variables can be specified in the `formula`
 #' argument.
-#' @return a list containg three objects: \code{cont} (model object, of 
+#' @return a list containing three objects: \code{cont} (model object, of 
 #' the continuous gam), \code{thresh} (model object, of the threshold 
 #' gam), and \code{best} (ranked GCV scores for the two model types). 
 #' 
