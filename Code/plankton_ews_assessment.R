@@ -1162,6 +1162,8 @@ ewsnet_comp <- rbind(ewsnet_phyto,ewsnet_zoo) |>
 ## Combine ##
 ################################################################################################################
 
-save(ewsnet_comp,exp_unicomp, exp_multicomp,roll_multicomp,roll_unicomp,perm_roll_unicomp,perm_roll_multicomp, file = "Results/ews_raw_data2.RData")
+#ewsnet_comp <- read.csv("/Users/ul20791/Downloads/ewsnet_comp.csv")[,-1]
 
-ewsnet_comp <- read.csv("/Users/ul20791/Downloads/ewsnet_comp.csv")[,-1]
+save(ewsnet_comp,exp_multicomp,roll_unicomp,roll_multicomp,perm_roll_unicomp,perm_roll_multicomp, file = "Results/ews_raw_data_a.RData")
+save(exp_uni_phyto,file = "Results/ews_raw_data_b.RData")
+save(exp_uni_zoo,file = "Results/ews_raw_data_c.RData")
