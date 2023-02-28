@@ -1,6 +1,6 @@
 # ews-assessments
 
-Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Matsuzaki S.S. Dutta P.S. & Clements C.F. 2023. Modern early warning signals are ineffective in empirical ecological data.
+Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Matsuzaki S.S., Dutta P.S. & Clements C.F. 2023. Modern early warning signals are ineffective in empirical ecological data.
 
 ## Graphical Abstract
 ![Image](https://github.com/duncanobrien/plankton-FD/files/8851740/plankFD_graphical_abstract.pdf)
