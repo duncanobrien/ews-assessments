@@ -1,11 +1,10 @@
 ##########################################################################################
 # Preamble
 ##########################################################################################
-
+require(Matrix)
 require(tidybayes)
 require(ggplot2)
 require(data.table)
-require(Matrix)
 require(tidyverse)
 require(brms)
 
@@ -40,6 +39,21 @@ suc_ewsnet_comp <- lapply(c("none","linear","gaussian","loess"),function(x){
     extract_ews_pred(ews.data = subset(ewsnet_comp,detrend_meth == x & deseason_meth == j)|>
                        select(-c(detrend_meth,deseason_meth)),
                      sensitivity = 0.7,
+                     outcome = lake_outcome_troph,
+                     method = "ML") |>
+      mutate(detrend_meth = x,deseason_meth = j)
+  }) |>
+    data.table::rbindlist()
+}) |>
+  data.table::rbindlist()
+
+suc_ewsnet_max_comp <- lapply(c("none","linear","gaussian","loess"),function(x){
+  
+  lapply(c("none","average","decompose","stl"),function(j){
+    
+    extract_ews_pred(ews.data = subset(ewsnet_comp,detrend_meth == x & deseason_meth == j)|>
+                       select(-c(detrend_meth,deseason_meth)),
+                     sensitivity = NULL,
                      outcome = lake_outcome_troph,
                      method = "ML") |>
       mutate(detrend_meth = x,deseason_meth = j)
@@ -94,6 +108,22 @@ suc_roll_multicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
 }) |>
   data.table::rbindlist()
 
+suc_roll_perm_multicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
+  
+  lapply(c("none","average","decompose","stl"),function(j){
+    
+    extract_ews_pred(ews.data = subset(perm_roll_multicomp,detrend_meth == x & deseason_meth == j)|>
+                       select(-c(detrend_meth,deseason_meth)),
+                     sensitivity = 0.5,
+                     outcome = lake_outcome_troph,
+                     method = "rolling",
+                     surrogate = TRUE) |>
+      mutate(detrend_meth = x,deseason_meth = j)
+  }) |>
+    data.table::rbindlist()
+}) |>
+  data.table::rbindlist()
+
 
 suc_roll_unicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
   
@@ -110,15 +140,35 @@ suc_roll_unicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
 }) |>
   data.table::rbindlist()
 
+suc_roll_perm_unicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
+  
+  lapply(c("none","average","decompose","stl"),function(j){
+    
+    extract_ews_pred(ews.data = subset(perm_roll_unicomp,detrend_meth == x & deseason_meth == j)|>
+                       select(-c(detrend_meth,deseason_meth)),
+                     sensitivity = 0.5,
+                     outcome = lake_outcome_troph,
+                     method = "rolling",
+                     surrogate = TRUE) |>
+      mutate(detrend_meth = x,deseason_meth = j)
+  }) |>
+    data.table::rbindlist()
+}) |>
+  data.table::rbindlist()
 
-all_ews_data <- as.data.table(suc_ewsnet_comp) %>%
+
+#all_ews_data <- as.data.table(suc_ewsnet_comp) %>%
+all_ews_data <- as.data.table(suc_ewsnet_max_comp) %>%
   .[,.SD[1], by = c("data_source","troph_level","scaling","lake","res","detrend_meth","deseason_meth")] %>%
   .[,c("data_source","troph_level","scaling","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")] %>%
   setnames(old = "scaling",new= "metric.code") %>%
   rbind(as.data.table(suc_exp_multicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
   rbind(as.data.table(suc_exp_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
-  rbind(as.data.table(suc_roll_multicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
-  rbind(as.data.table(suc_roll_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
+  #rbind(as.data.table(suc_roll_multicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
+  #rbind(as.data.table(suc_roll_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
+  rbind(as.data.table(suc_roll_perm_multicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
+  rbind(as.data.table(suc_roll_perm_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
+  
   .[,outcome := ifelse(prediction %in% c("match","prior"),
                        1,0)] %>%
   .[,variate := ifelse(grepl("multivariate",method),"multivariate","univariate")]%>%
@@ -166,24 +216,24 @@ ews.mod.detrend.mth.uni.roll <- brms::brm(brms::bf(total_success | trials(offset
                                      data = computation_data[computation_data$res == "Monthly" & grepl("univariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                        mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_rolling_none_none"))
                                      ,
-                                     iter = 4000,
-                                     #thin =thn,
-                                     warmup = 1000,
-                                     prior= c(prior(normal(0, 1.2), class = b),
+                                     iter = 10000,
+                                     thin =thn,
+                                     warmup = 2000,
+                                     prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                               prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
                                      family = binomial(link = "logit"), 
                                      chains = 4,
-                                     control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
+                                     control = list(adapt_delta =0.99, max_treedepth = 20,stepsize = 0.01),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
-#gaussian-average
+#linear_stl
 ews.mod.detrend.mth.uni.exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                           data = computation_data[computation_data$res == "Monthly" & grepl("univariate_expanding",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                            mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_expanding_none_none"))
                                          ,
-                                          iter = 4000,
-                                          #thin =thn,
-                                          warmup = 1000,
-                                          prior= c(prior(normal(0, 1.2), class = b),
+                                          iter = 10000,
+                                          thin =thn,
+                                          warmup = 2000,
+                                          prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                                    prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
                                           family = binomial(link = "logit"), 
                                           chains = 4,
@@ -194,10 +244,10 @@ ews.mod.detrend.mth.multi.exp <- brms::brm(brms::bf(total_success | trials(offse
                                       data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_expanding",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                         mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_expanding_none_none"))
                                       ,
-                                      iter = 4000,
-                                      #thin =thn,
-                                      warmup = 1000,
-                                      prior= c(prior(normal(0, 1.2), class = b),
+                                      iter = 10000,
+                                      thin =thn,
+                                      warmup = 2000,
+                                      prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                                prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
                                       family = binomial(link = "logit"), 
                                       chains = 4,
@@ -208,24 +258,24 @@ ews.mod.detrend.mth.multi.roll <- brms::brm(brms::bf(total_success | trials(offs
                                            data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                              mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_rolling_none_none"))
                                            ,
-                                           iter = 4000,
-                                           #thin =thn,
-                                           warmup = 1000,
-                                           prior= c(prior(normal(0, 1.2), class = b),
+                                           iter = 10000,
+                                           thin =thn,
+                                           warmup = 2000,
+                                           prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                                     prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
                                            family = binomial(link = "logit"), 
                                            chains = 4,
                                            control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                            seed = 12345, cores = 4,sample_prior = TRUE)
-#gaussian-average
+#gaussian_none
 ews.mod.detrend.mth.ml <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                       data = computation_data[computation_data$res == "Monthly" & grepl("ML",computation_data$method_code)  & !(computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington")),] |>
                                       mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_ML_none_none"))
                                     ,
-                                      iter = 4000,
-                                      #thin =thn,
-                                      warmup = 1000,
-                                      prior= c(prior(normal(0, 1.2), class = b),
+                                      iter = 10000,
+                                      thin =thn,
+                                      warmup = 2000,
+                                      prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                                prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
                                       family = binomial(link = "logit"), 
                                       chains = 4,
@@ -294,7 +344,7 @@ ggplot(subset(dat_detrend_trials_alt,.width == 0.95),
 
 ews.mod.metric.mth.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
-                                                 subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),
+                                                 subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                     iter = its,
                                     thin = thn,
                                     warmup = wrmup,
@@ -307,7 +357,7 @@ ews.mod.metric.mth.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ me
 
 ews.mod.metric.yr.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
-                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),
+                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                    iter = its,
                                    thin = thn,
                                    warmup = wrmup,
@@ -373,6 +423,7 @@ all_metric_plot <- ggplot(dat_metric_trials,aes(y = .variable, x = .value)) +
                                 ,colour = "black" ) +
   labs(x="Posterior estimate", y = "Early warning signal metric") +
   coord_cartesian(xlim = c(-3.75,3.75))+
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
   facet_wrap(~res)+
   theme_bw()+
   theme(legend.position = "none",
@@ -385,11 +436,11 @@ all_metric_plot <- ggplot(dat_metric_trials,aes(y = .variable, x = .value)) +
 
 ews.mod.method.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
                                 data = rbind(subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
-                                      subset(computation_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),
+                                      subset(computation_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                 iter = its,
                                 thin = thn,
                                 warmup = wrmup,
-                                prior= c(prior(normal(0, 1.2), class = b),
+                                prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                          prior(normal(1, 1),class = sd)),
                                 family = binomial(link = "logit"), 
                                 chains = 2,
@@ -403,11 +454,11 @@ ews.mod.method.yr<- brms::brm(brms::bf(total_success | trials(offset) ~ method_c
                               iter = its,
                               thin = thn,
                               warmup = wrmup,
-                              prior= c(prior(normal(0, 1.2), class = b),
+                              prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                        prior(normal(1, 1),class = sd)),
                               family = binomial(link = "logit"), 
                               chains = 2,
-                              control = list(adapt_delta = .975, max_treedepth = 20),
+                              control = list(adapt_delta = .99, max_treedepth = 20),
                               seed = 12345, cores = 4,sample_prior = TRUE)
 
 dat_method_trials <-  ews.mod.method.mth |>
@@ -469,10 +520,10 @@ ggsave(ggplot(dat_method_trials,aes(y = .variable, x = .value)) +
        filename = "/Users/ul20791/Downloads/eg_bayes_fig3.pdf",width = 6,height = 5)
 
 ##########################################################################################
-# Compare Indicators' True Positive Rate
+# Compare Metrics' True Positive Rate
 ##########################################################################################
 
-ews.mod.metric.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews.mod.metric.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                      iter = its,
@@ -481,11 +532,11 @@ ews.mod.metric.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ i
                                      prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                               prior(normal(1, 1),class = sd)),
                                      family = binomial(link = "logit"), 
-                                     chains = 2,
-                                     control = list(adapt_delta = .975, max_treedepth = 20),
+                                     chains = 4,
+                                     control = list(adapt_delta = .99, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews.mod.metric.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                    iter = its,
@@ -494,42 +545,37 @@ ews.mod.metric.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ ind
                                    prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                             prior(normal(1, 1),class = sd)),
                                    family = binomial(link = "logit"), 
-                                   chains = 2,
-                                   control = list(adapt_delta = .975, max_treedepth = 20),
+                                   chains = 4,
+                                   control = list(adapt_delta = .99, max_treedepth = 20),
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 
 dat_metric_true_trials <-  ews.mod.metric.mth.true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
-  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
   rbind(ews.mod.metric.yr.true |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
-          mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+          mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
                  res = "Yearly")) |>
-  mutate(.variable = gsub("P"," + ",.variable),
-         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = gsub("P"," + ",.variable)) |>
   mutate(.variable = forcats::fct_reorder(.variable,.value,.fun = mean,.desc = FALSE))  #reorder variable in to increasing ability
 
 dat_metric_true_halfeye <- ews.mod.metric.mth.true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
-  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
   rbind( ews.mod.metric.yr.true |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
-           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
                   res = "Yearly"))|>
-  mutate(.variable = gsub("P"," + ",.variable),
-         method_code = gsub(".*_", "",.variable)) |>
-  mutate(.variable = factor(.variable, levels = levels(dat_metric_true_trials$.variable))) |> #reorder variable in to increasing average ability based on dat_metric_true_trials
-  mutate(.variable = sub("_.*", "",.variable))
-
-
+  mutate(.variable = gsub("P"," + ",.variable)) |>
+  mutate(.variable = factor(.variable, levels = levels(dat_metric_true_trials$.variable))) #reorder variable in to increasing average ability based on dat_metric_true_trials
 
 
 metric_true_plot <- ggplot(dat_metric_true_trials |>   
@@ -553,72 +599,68 @@ metric_true_plot <- ggplot(dat_metric_true_trials |>
   #coord_cartesian(xlim = c(-4.5,4.5))+
   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
   coord_cartesian(xlim = c(-4.5,4.5))+
-  #facet_wrap(~res)+
-  facet_grid(method_code~res,scales = "free_y")+
-  
+  facet_wrap(~res)+
   theme_bw()+
   theme(panel.grid.minor = element_blank())  
 
 ##########################################################################################
-# Compare Indicators' False Negative Rate
+# Compare Metrics' False Negative Rate
 ##########################################################################################
-ews.mod.metric.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews.mod.metric.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                      iter = its,
                                      thin = thn,
                                      warmup = wrmup,
                                      prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
-                                              prior(normal(1, 1),class = sd,lb= -5.5,ub=5.5)),
+                                              prior(normal(1, 1),class = sd)),
                                      family = binomial(link = "logit"), 
-                                     chains = 2,
-                                     control = list(adapt_delta = .975, max_treedepth = 20),
+                                     chains = 4,
+                                     control = list(adapt_delta = .99, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews.mod.metric.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                    iter = its,
                                    thin = thn,
                                    warmup = wrmup,
-                                   prior= c(prior(normal(0, 1.2), class = b),
+                                   prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                             prior(normal(1, 1),class = sd)),
                                    family = binomial(link = "logit"), 
-                                   chains = 2,
+                                   chains = 4,
                                    control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 
 
 dat_metric_false_trials <-  ews.mod.metric.mth.false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
-  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
   rbind(ews.mod.metric.yr.false |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
-          mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+          mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
                  res = "Yearly")) |>
-  mutate(.variable = gsub("P"," + ",.variable),
-         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = gsub("P"," + ",.variable)) |>
   mutate(.variable = factor(.variable,levels = levels(dat_metric_true_trials$.variable)))  #reorder variable in to increasing ability based upon true postive results
 
 dat_metric_false_halfeye <- ews.mod.metric.mth.false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
-  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
   rbind( ews.mod.metric.yr.false |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
-           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
                   res = "Yearly"))|>
-  mutate(.variable = gsub("P"," + ",.variable),
-         method_code = gsub(".*_", "",.variable)) |>
-  mutate(.variable = factor(.variable, levels = levels(dat_metric_true_trials$.variable))) |> #reorder variable in to increasing average ability based on dat_metric_true_trials
-  mutate(.variable = sub("_.*", "",.variable))
+  mutate(.variable = gsub("P"," + ",.variable)) |>
+  mutate(.variable = factor(.variable, levels = levels(dat_metric_true_trials$.variable))) #reorder variable in to increasing average ability based on dat_metric_true_trials
+
 
 
 metric_false_plot <- ggplot(dat_metric_false_trials |>
@@ -643,8 +685,8 @@ metric_false_plot <- ggplot(dat_metric_false_trials |>
   #coord_cartesian(xlim = c(-4.5,4.5))+
   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
   coord_cartesian(xlim = c(-4.5,4.5))+
-  #facet_wrap(~res)+
-  facet_grid(method_code~res,scales = "free_y")+
+  facet_wrap(~res)+
+  #facet_grid(method_code~res,scales = "free_y")+
   theme_bw()+
   theme(axis.title.y =  element_blank(),
         axis.text.y =  element_blank(),
@@ -664,6 +706,198 @@ ggsave(metric_true_plot +
           ) &
     labs(fill="EWS method"),
   filename = "/Users/ul20791/Downloads/eg_bayes_fig2.pdf",width = 10,height = 6)
+
+
+##########################################################################################
+# Compare Indicators' True Positive Rate
+##########################################################################################
+
+ews.mod.ind.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
+                                                  subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
+                                     iter = its,
+                                     thin = thn,
+                                     warmup = wrmup,
+                                     prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
+                                              prior(normal(1, 1),class = sd)),
+                                     family = binomial(link = "logit"), 
+                                     chains = 4,
+                                     control = list(adapt_delta = .975, max_treedepth = 20),
+                                     seed = 12345, cores = 4,sample_prior = TRUE)
+
+ews.mod.ind.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+                                   data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
+                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
+                                   iter = its,
+                                   thin = thn,
+                                   warmup = wrmup,
+                                   prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
+                                            prior(normal(1, 1),class = sd)),
+                                   family = binomial(link = "logit"), 
+                                   chains = 4,
+                                   control = list(adapt_delta = .975, max_treedepth = 20),
+                                   seed = 12345, cores = 4,sample_prior = TRUE)
+
+dat_ind_true_trials <-  ews.mod.ind.mth.true |>
+  tidybayes::gather_draws(`b.*`,regex = T) |>
+  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  tidybayes::median_qi(.width = c(.95, .8, .5)) |>
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+         res = "Monthly") |>
+  rbind(ews.mod.ind.yr.true |>
+          tidybayes::gather_draws(`b.*`,regex = T) |>
+          mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+          tidybayes::median_qi(.width = c(.95, .8, .5)) |>
+          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+                 res = "Yearly")) |>
+  mutate(.variable = gsub("P"," + ",.variable),
+         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = forcats::fct_reorder(.variable,.value,.fun = mean,.desc = FALSE))  #reorder variable in to increasing ability
+
+dat_ind_true_halfeye <- ews.mod.ind.mth.true |>
+  tidybayes::gather_draws(`b.*`,regex = T) |>
+  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+         res = "Monthly") |>
+  rbind( ews.mod.ind.yr.true |>
+           tidybayes::gather_draws(`b.*`,regex = T) |>
+           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+                  res = "Yearly"))|>
+  mutate(.variable = gsub("P"," + ",.variable),
+         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = factor(.variable, levels = levels(dat_ind_true_trials$.variable))) |> #reorder variable in to increasing average ability based on dat_metric_true_trials
+  mutate(.variable = sub("_.*", "",.variable))
+
+
+
+
+ind_true_plot <- ggplot(dat_ind_true_trials |>   
+                             mutate(.variable = sub("_.*", "",.variable)),aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= dat_ind_true_halfeye, alpha=0.5, aes(fill=variate)) +
+  # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
+  #               aes(xmin=.lower, xmax=.upper,col=variate), 
+  #                width=0, alpha=0.9, size=1.3)+
+  # geom_point(size=4,aes(fill=variate),shape=21) +
+  scale_fill_manual(values=c("#529928",
+                                      "#5d3099",
+                                      "#bfbd3d"))+
+                                        scale_color_manual(values=c("#529928",
+                                                                             "#5d3099",
+                                                                             "#bfbd3d"))+
+tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black" ) +
+  labs(x="True positive prediction probability", y = "Early warning signal indicator") +
+  #coord_cartesian(xlim = c(-4.5,4.5))+
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  #facet_wrap(~res)+
+  facet_grid(method_code~res,scales = "free_y")+
+  
+  theme_bw()+
+  theme(panel.grid.minor = element_blank())  
+
+##########################################################################################
+# Compare Indicators' False Negative Rate
+##########################################################################################
+ews.mod.ind.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
+                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
+                                      iter = its,
+                                      thin = thn,
+                                      warmup = wrmup,
+                                      prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
+                                               prior(normal(1, 1),class = sd)),
+                                      family = binomial(link = "logit"), 
+                                      chains = 2,
+                                      control = list(adapt_delta = .975, max_treedepth = 20),
+                                      seed = 12345, cores = 4,sample_prior = TRUE)
+
+ews.mod.ind.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
+                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
+                                    iter = its,
+                                    thin = thn,
+                                    warmup = wrmup,
+                                    prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
+                                             prior(normal(1, 1),class = sd)),
+                                    family = binomial(link = "logit"), 
+                                    chains = 2,
+                                    control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
+                                    seed = 12345, cores = 4,sample_prior = TRUE)
+
+
+dat_ind_false_trials <-  ews.mod.ind.mth.false |>
+  tidybayes::gather_draws(`b.*`,regex = T) |>
+  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  tidybayes::median_qi(.width = c(.95, .8, .5)) |>
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+         res = "Monthly") |>
+  rbind(ews.mod.ind.yr.false |>
+          tidybayes::gather_draws(`b.*`,regex = T) |>
+          mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+          tidybayes::median_qi(.width = c(.95, .8, .5)) |>
+          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+                 res = "Yearly")) |>
+  mutate(.variable = gsub("P"," + ",.variable),
+         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = factor(.variable,levels = levels(dat_ind_true_trials$.variable)))  #reorder variable in to increasing ability based upon true postive results
+
+dat_ind_false_halfeye <- ews.mod.ind.mth.false |>
+  tidybayes::gather_draws(`b.*`,regex = T) |>
+  mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+         res = "Monthly") |>
+  rbind( ews.mod.ind.yr.false |>
+           tidybayes::gather_draws(`b.*`,regex = T) |>
+           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
+           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+                  res = "Yearly"))|>
+  mutate(.variable = gsub("P"," + ",.variable),
+         method_code = gsub(".*_", "",.variable)) |>
+  mutate(.variable = factor(.variable, levels = levels(dat_ind_true_trials$.variable))) |> #reorder variable in to increasing average ability based on dat_metric_true_trials
+  mutate(.variable = sub("_.*", "",.variable))
+
+
+ind_false_plot <- ggplot(dat_ind_false_trials |>
+                              mutate(.variable = sub("_.*", "",.variable))
+                            ,aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= dat_ind_false_halfeye, alpha=0.5, aes(fill=variate)) +
+  # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
+  #               aes(xmin=.lower, xmax=.upper,col=variate), 
+  #                width=0, alpha=0.9, size=1.3)+
+  # geom_point(size=4,aes(fill=variate),shape=21) +
+  scale_fill_manual(values=c("#529928",
+                                      "#5d3099",
+                                      "#bfbd3d"))+
+scale_color_manual(values=c("#529928","#5d3099","#bfbd3d"))+
+tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black") +
+  labs(x="True negative prediction probability", y = "Early warning signal indicator") +
+  #coord_cartesian(xlim = c(-4.5,4.5))+
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  #facet_wrap(~res)+
+  facet_grid(method_code~res,scales = "free_y")+
+  theme_bw()+
+  theme(axis.title.y =  element_blank(),
+        axis.text.y =  element_blank(),
+        panel.grid.minor = element_blank())      
+
+require(patchwork)
+
+ggsave(ind_true_plot +
+         ind_false_plot +
+         patchwork::plot_layout(guides = 'collect') + 
+         plot_annotation(tag_levels = 'a') &
+         theme(plot.tag = element_text(face = 'bold')
+               # ,legend.background = element_rect(fill = '#EFEFEF'),
+               # panel.grid.major = element_line(colour = "grey80"),
+               # plot.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF'),
+               # panel.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF')
+         ) &
+         labs(fill="EWS method"),
+       filename = "/Users/ul20791/Downloads/eg_bayes_fig2.pdf",width = 10,height = 6)
 
 ##########################################################################################
 # Compare Indicators (Lakes)
@@ -744,12 +978,12 @@ ggplot(subset(dat_metric_lake_trials,.width == 0.95),
                 width=0, alpha=0.9, size=1.3)+
   geom_point(aes(fill=variate),size=2,shape=21) +
   scale_fill_manual(values=c("#529928",
-                             "#5d3099",
-                             "#bfbd3d"))+
-  scale_color_manual(values=c("#529928",
-                              "#5d3099",
-                              "#bfbd3d"))+
-  # tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),
+                                      "#5d3099",
+                                      "#bfbd3d"))+
+                                        scale_color_manual(values=c("#529928",
+                                                                             "#5d3099",
+                                                                             "#bfbd3d"))+
+                                                                               # tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),
   #                               interval_size_range = c(0.8, 2)
   #                               ,colour = "black" ) +
   labs(x="Probability of correct prediction", y = "Early warning signal metric") +

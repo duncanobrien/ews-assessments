@@ -156,7 +156,8 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
     out <- out[tmp, on =  c("data_source","lake","res","scaling","troph_level"), prediction := i.prediction] # merge tmp subset to main data.table and fill missing values
     
     }
-  }else if(is.null(sensitivity)){
+  
+  if(is.null(sensitivity)){
     out <- out %>%  
       .[, model_ensemble := NULL] %>%
       data.table::melt(., id.vars = c("data_source","lake","res","method","computation","troph_level"),
@@ -173,16 +174,18 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
       .[, threshold.crossed := NA] # identify warnings when correlation exceed `sensitivity` 
     
     tmp <- data.table::copy(out)[pos_outcome == ewsnet_prediction,] %>% # on subset of data (the strongest prediction for each time series)
-      .[,prediction := ifelse(outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans", "match",
-                              ifelse(ewsnet_prediction == "critical" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "miss",   
+      .[,prediction := ifelse(ewsnet_prediction == "none" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans", "match",
+                              ifelse(ewsnet_prediction == "critical" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "match",   
                                      ifelse(ewsnet_prediction == "critical" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans", "unknown",
-                                            ifelse(ewsnet_prediction == "critical" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "match",
                                                    ifelse(ewsnet_prediction == "smooth" & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans","match",
-                                                          "miss"))))),
+                                                          "miss")))),
         by = c("lake","res","scaling","data_source")] # match warning prediction to ground truth
+    
+    out <- out[tmp, on =  c("data_source","lake","res","scaling","troph_level"), prediction := i.prediction] # merge tmp subset to main data.table and fill missing values
     
   }
   
+  }
   return(as.data.frame(out))
   
 }

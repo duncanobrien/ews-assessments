@@ -27,7 +27,6 @@ lapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
 rm(list = ls()[!ls() %in% c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
                             "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat")])
 
-
 ################################################################################################################
 ## Multivariate EWS Assessment Expanding ##
 ################################################################################################################
@@ -992,7 +991,8 @@ perm_roll_unicomp <- rbind(perm_roll_uni_phyto,perm_roll_uni_zoo)
 ################################################################################################################
 ## EWSNet ##
 ################################################################################################################
-ewsnet_init("EWSNET_env", auto=T)
+EWSmethods::ewsnet_init("EWSNET_env", auto=T)
+EWSmethods::ewsnet_reset(auto=T)
 
 ewsnet_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr_dat[,1:45],mad_yr_dat[,1:32],
                                        wind_yr_dat[,1:18],wash_yr_dat[,1:7],leve_yr_dat[,1:4],UZ_yr_dat[,1:59],mon_yr_dat[,1:45],
@@ -1026,6 +1026,8 @@ ewsnet_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr
                                         time_vec <- colnames(x)[1]
                                         
                                         foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
+                                          
+                                          print(paste(i,j,k,collapse = "_"))
                                           
                                           ews.tmp.scaled <- EWSmethods::ewsnet_predict(c(x[,i]),scaling = T, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
                                           ews.tmp.unscaled <- EWSmethods::ewsnet_predict(c(x[,i]),scaling = F, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
@@ -1074,7 +1076,6 @@ ewsnet_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr
     troph_level = "phytoplankton") |>
   select(-name)
 
-
 ewsnet_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26:34)],LZ_yr_dat[,c(1,46:51)],mad_yr_dat[,c(1,33:38)],
                                      wind_yr_dat[,c(1,20:23)],wash_yr_dat[,c(1,8:15)],leve_yr_dat[,c(1,5:7)],UZ_yr_dat[,c(1,60:65)],mon_yr_dat[,c(1,46:53)],
                                      kin_mth_dat[,c(1,15:22)],kas_mth_dat[,c(1,26:34)],LZ_mth_dat[,c(1,37:41)],mad_mth_dat[,c(1,18:22)],
@@ -1107,6 +1108,8 @@ ewsnet_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26:
                                       time_vec <- colnames(x)[1]
                                       
                                       foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
+                                        
+                                        print(paste(i,j,k,collapse = "_"))
                                         
                                         ews.tmp.scaled <- EWSmethods::ewsnet_predict(c(x[,i]),scaling = T, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
                                         ews.tmp.unscaled <- EWSmethods::ewsnet_predict(c(x[,i]),scaling = F, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
@@ -1159,6 +1162,180 @@ ewsnet_comp <- rbind(ewsnet_phyto,ewsnet_zoo) |>
   mutate(model = "Original")
 
 ################################################################################################################
+## EWSNet Impulse ##
+################################################################################################################
+EWSmethods::ewsnet_init("EWSNET_env", auto=T)
+source("Code/ewsnet_predict_impulse.R")
+
+ewsnet_impulse_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr_dat[,1:45],mad_yr_dat[,1:32],
+                                       wind_yr_dat[,1:18],wash_yr_dat[,1:7],leve_yr_dat[,1:4],UZ_yr_dat[,1:59],mon_yr_dat[,1:45],
+                                       kin_mth_dat[,1:14],kas_mth_dat[,1:25],LZ_mth_dat[,1:36],mad_mth_dat[,1:17],
+                                       wind_mth_dat[,1:12],wash_mth_dat[,1:7],leve_mth_dat[,1:4],UZ_mth_dat[,1:58],mon_mth_dat[,1:29]),
+                                  FUN = function(x){
+                                    
+                                    out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                      
+                                      if(j != "none"){
+                                        x <- detrend_ts(x,method = j,span = 0.5) 
+                                        x[,-1] <- sapply(colnames(x)[-1],FUN = function(i){
+                                          x[,i] <- x[,i] + abs(min(x[,i])) #set 0 as minimum
+                                        })
+                                      }
+                                      
+                                      out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                        
+                                        if(k != "none"){
+                                          if(any(stringr::str_length(x[,1])>4)){
+                                            x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
+                                            x <- deseason_ts(x,increment = "month", method = k,order = "ymd")
+                                            x[,1] <- as.numeric(zoo::as.yearmon(x[,1])) #convert from date back to numeric for rbind
+                                            
+                                            if(k == "decompose"){
+                                              x <- na.omit(x) #remove NAs at head and tail of df
+                                            }
+                                          }
+                                        }
+                                        
+                                        time_vec <- colnames(x)[1]
+                                        
+                                        foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
+                                          
+                                          print(paste(i,j,k,collapse = "_"))
+                                          
+                                          ews.tmp.scaled <- ewsnet_predict_impulse(c(x[,i]),scaling = T, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
+                                          ews.tmp.unscaled <- ewsnet_predict_impulse(c(x[,i]),scaling = F, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
+                                          
+                                          data.frame(data_source = paste(i),
+                                                     model_ensemble = "25",
+                                                     predictionScaled = ews.tmp.scaled$pred,
+                                                     no_transScaled = ews.tmp.scaled$no_trans_prob,
+                                                     smth_transScaled =  ews.tmp.scaled$smooth_trans_prob,
+                                                     crt_transScaled = ews.tmp.scaled$critical_trans_prob,
+                                                     predictionUnscaled = ews.tmp.unscaled$pred,
+                                                     no_transUnscaled = ews.tmp.unscaled$no_trans_prob,
+                                                     smth_transUnscaled =  ews.tmp.unscaled$smooth_trans_prob,
+                                                     crt_transUnscaled = ews.tmp.unscaled$critical_trans_prob)
+                                          
+                                        } 
+                                      }) |>
+                                        `names<-`(c("none","average","decompose","stl")) |>
+                                        data.table::rbindlist(idcol="deseason_meth")
+                                      
+                                      return(out_inner)
+                                    }) |>
+                                      `names<-`(c("none","linear","gaussian","loess")) |>
+                                      data.table::rbindlist(idcol="detrend_meth")
+                                    return(out)
+                                    
+                                  }) |>
+  `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
+              "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
+  data.table::rbindlist(idcol="name") |> 
+  mutate(lake = case_when(
+    grepl("kin", name) ~ "Kinneret",
+    grepl("kas", name) ~ "Kasumigaura",
+    grepl("LZ", name) ~ "Lower Zurich",
+    grepl("mad", name) ~ "Mendota",
+    grepl("wind", name) ~ "Windermere",
+    grepl("UZ", name) ~ "Upper Zurich",
+    grepl("mon", name) ~ "Monona",
+    grepl("leve", name) ~ "Loch Leven",
+    grepl("wash", name) ~ "Washington"),
+    res =  case_when(
+      grepl("yr", name) ~ "Yearly",
+      grepl("mth", name) ~ "Monthly"),
+    method = "univariate EWS",
+    computation = "ML",
+    troph_level = "phytoplankton") |>
+  select(-name)
+
+
+ewsnet_impulse_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26:34)],LZ_yr_dat[,c(1,46:51)],mad_yr_dat[,c(1,33:38)],
+                                     wind_yr_dat[,c(1,20:23)],wash_yr_dat[,c(1,8:15)],leve_yr_dat[,c(1,5:7)],UZ_yr_dat[,c(1,60:65)],mon_yr_dat[,c(1,46:53)],
+                                     kin_mth_dat[,c(1,15:22)],kas_mth_dat[,c(1,26:34)],LZ_mth_dat[,c(1,37:41)],mad_mth_dat[,c(1,18:22)],
+                                     wind_mth_dat[,c(1,14:17)],wash_mth_dat[,c(1,8:13)],leve_mth_dat[,c(1,5:6)],UZ_mth_dat[,c(1,59:63)],mon_mth_dat[,c(1,30:36)]),
+                                FUN = function(x){
+                                  
+                                  out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                    
+                                    if(j != "none"){
+                                      x <- detrend_ts(x,method = j,span = 0.5) 
+                                      x[,-1] <- sapply(colnames(x)[-1],FUN = function(i){
+                                        x[,i] <- x[,i] + abs(min(x[,i])) #set 0 as minimum
+                                      })
+                                    }
+                                    
+                                    out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                      
+                                      if(k != "none"){
+                                        if(any(stringr::str_length(x[,1])>4)){
+                                          x[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
+                                          x <- deseason_ts(x,increment = "month", method = k,order = "ymd")
+                                          x[,1] <- as.numeric(zoo::as.yearmon(x[,1])) #convert from date back to numeric for rbind
+                                          
+                                          if(k == "decompose"){
+                                            x <- na.omit(x) #remove NAs at head and tail of df
+                                          }
+                                        }
+                                      }
+                                      
+                                      time_vec <- colnames(x)[1]
+                                      
+                                      foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
+                                        
+                                        print(paste(i,j,k,collapse = "_"))
+                                        
+                                        ews.tmp.scaled <- ewsnet_predict_impulse(c(x[,i]),scaling = T, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
+                                        ews.tmp.unscaled <- ewsnet_predict_impulse(c(x[,i]),scaling = F, ensemble = 25,envname = "EWSNET_env") #only run on pre-regime shift
+                                       
+                                        data.frame(data_source = paste(i),
+                                                   model_ensemble = "25",
+                                                   predictionScaled = ews.tmp.scaled$pred,
+                                                   no_transScaled = ews.tmp.scaled$no_trans_prob,
+                                                   smth_transScaled =  ews.tmp.scaled$smooth_trans_prob,
+                                                   crt_transScaled = ews.tmp.scaled$critical_trans_prob,
+                                                   predictionUnscaled = ews.tmp.unscaled$pred,
+                                                   no_transUnscaled = ews.tmp.unscaled$no_trans_prob,
+                                                   smth_transUnscaled =  ews.tmp.unscaled$smooth_trans_prob,
+                                                   crt_transUnscaled = ews.tmp.unscaled$critical_trans_prob)
+                                        
+                                      } 
+                                    }) |>
+                                      `names<-`(c("none","average","decompose","stl")) |>
+                                      data.table::rbindlist(idcol="deseason_meth")
+                                    
+                                    return(out_inner)
+                                  }) |>
+                                    `names<-`(c("none","linear","gaussian","loess")) |>
+                                    data.table::rbindlist(idcol="detrend_meth")
+                                  return(out)
+                                  
+                                }) |>
+  `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
+              "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
+  data.table::rbindlist(idcol="name") |> 
+  mutate(lake = case_when(
+    grepl("kin", name) ~ "Kinneret",
+    grepl("kas", name) ~ "Kasumigaura",
+    grepl("LZ", name) ~ "Lower Zurich",
+    grepl("mad", name) ~ "Mendota",
+    grepl("wind", name) ~ "Windermere",
+    grepl("UZ", name) ~ "Upper Zurich",
+    grepl("mon", name) ~ "Monona",
+    grepl("leve", name) ~ "Loch Leven",
+    grepl("wash", name) ~ "Washington"),
+    res =  case_when(
+      grepl("yr", name) ~ "Yearly",
+      grepl("mth", name) ~ "Monthly"),
+    method = "univariate EWS",
+    computation = "ML",
+    troph_level = "zooplankton") |>
+  select(-name)
+
+ewsnet_impulse <- rbind(ewsnet_impulse_phyto,ewsnet_impulse_zoo) |>
+  mutate(model = "Impulse")
+
+################################################################################################################
 ## Combine ##
 ################################################################################################################
 
@@ -1167,3 +1344,4 @@ ewsnet_comp <- rbind(ewsnet_phyto,ewsnet_zoo) |>
 save(ewsnet_comp,exp_multicomp,roll_unicomp,roll_multicomp,perm_roll_unicomp,perm_roll_multicomp, file = "Results/ews_raw_data_a.RData")
 save(exp_uni_phyto,file = "Results/ews_raw_data_b.RData")
 save(exp_uni_zoo,file = "Results/ews_raw_data_c.RData")
+save(ewsnet_impulse,file = "Results/ews_raw_data_d.RData")
