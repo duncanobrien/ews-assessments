@@ -4,7 +4,7 @@
 
 [*lake_state_spaces.R*](lake_state_spaces.R) - from the raw plankton densities, fit threshold generalised additive models to both plankton time series and environmental state spaces. Coherence in break points between the two models indicates a critical transition.
 
-[*plankon_ews_assessments.R*](plankon_ews_assessments.R) - from the processed plankton densities, assess each time series using the five forms of early warning signal (EWS): univariate rolling windows, univariate expanding windows, multivariate rolling windows, multivariate expanding windows and machine learning (represented by [EWSNet](https://doi.org/10.1098/rsos.211475)).
+[*plankton_ews_assessments.R*](plankton_ews_assessments.R) - from the processed plankton densities, assess each time series using the five forms of early warning signal (EWS): univariate rolling windows, univariate expanding windows, multivariate rolling windows, multivariate expanding windows and machine learning (represented by [EWSNet](https://doi.org/10.1098/rsos.211475)).
 
 [*ews_success_analysis.R*](ews_success_analysis.R) - extract the success of each EWS using [*extract_ews_pred_fn.R*](extract_ews_pred_fn.R).
 
@@ -17,6 +17,6 @@
 
 [*perm_rollEWS_fn.R*](perm_rollEWS_fn.R) - a modfication of the `uniEWS()` function from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) which performs permutations to assess the significance of rolling EWSs.
 
-[*ewsnet_predict_impulse.R*](ewsnet_predict_impulse.R) - a modfication of the `ewsnet_predict()` function from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) to use the Impulse version of the EWSNet machine learning model.
+[*ewsnet_predict_impulse.R*](ewsnet_predict_impulse.R) - a modfication of the `ewsnet_predict()` function from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) to use the Impulse version of the EWSNet machine learning model. These weights are provided in this [repository](ews_assessments/python/weights).
 
 [*extract_ews_pred_fn.R*](extract_ews_pred_fn.R) - function to extract the prediction made by each EWS indicator for each EWS computation method.
