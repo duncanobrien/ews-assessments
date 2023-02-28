@@ -1167,6 +1167,8 @@ ewsnet_comp <- rbind(ewsnet_phyto,ewsnet_zoo) |>
 EWSmethods::ewsnet_init("EWSNET_env", auto=T)
 source("Code/ewsnet_predict_impulse.R")
 
+#ews.tmp.scaled <- ewsnet_predict_impulse(c(wind_yr_dat[,21]),scaling = T, ensemble = 5,envname = "EWSNET_env") #only run on pre-regime shift
+
 ewsnet_impulse_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr_dat[,1:45],mad_yr_dat[,1:32],
                                        wind_yr_dat[,1:18],wash_yr_dat[,1:7],leve_yr_dat[,1:4],UZ_yr_dat[,1:59],mon_yr_dat[,1:45],
                                        kin_mth_dat[,1:14],kas_mth_dat[,1:25],LZ_mth_dat[,1:36],mad_mth_dat[,1:17],
