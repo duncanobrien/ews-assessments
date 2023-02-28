@@ -17,7 +17,7 @@ Carpenter S., Kitchell J., Cole  J. & Pace M. 2017. Cascade project at North Tem
 
 *Lake Washington*: 
 
-Francis T.B., Wolkovich E.M., Scheuerell M.D., Katz S.L., Holmes E.E. & Hampton S.E. (2014) Shifting regimes and changing interactions in the Lake Washington, U.S.A., plankton community from 1962–1994. *PLOS ONE*. 9(10): e110363. https://doi.org/10.1371/journal.pone.0110363.
+Francis T.B., Wolkovich E.M., Scheuerell M.D., Katz S.L., Holmes E.E. & Hampton S.E. 2014. Shifting regimes and changing interactions in the Lake Washington, U.S.A., plankton community from 1962–1994. *PLOS ONE*. 9(10): e110363. https://doi.org/10.1371/journal.pone.0110363.
 
 *Windermere*: 
 
