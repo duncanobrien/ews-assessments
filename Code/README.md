@@ -10,7 +10,7 @@
 
 [*bayesian_success_models_ML.R*](bayesian_success_models_ML.R) - fit binomial models to EWS success rates and estimate probabilities of correct classification.
 
-[*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*supplementary_figures.R*](supplementary_figures.R) - generate figures.
+[*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FigureS1.R*](FigureS1.R), [*TablesS1_5.R*](TablesS1_5.R) - generate figures.
 
 ## Supporting functions
 [*threshold_gam.R*](threshold_gam.R) - collection of supporting functions to fit threshold generalised additive models.
