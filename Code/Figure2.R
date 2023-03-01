@@ -3,7 +3,6 @@
 ########################################################################################################################
 require(tidyverse)
 require(foreach)
-require(patchwork)
 
 source("Data/kinneret_plankton_data.R") #raw data not provided. See references in Data Availability statement and repository README
 source("Data/kinneret_environmental_data.R")

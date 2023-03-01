@@ -523,7 +523,7 @@ transition_dates <-expand.grid(metric = unique(c(lake_state_space$metric,lake_te
 
 write.csv(transition_dates,"Data/transition_dates.csv")
 
-ggplot2::ggsave("/Users/ul20791/Downloads/lake_state_spaces.pdf",
+ggplot2::ggsave("Figures/figure_S1.pdf",
        ggpubr::ggarrange(p_temporal + ggtitle("a) time series"),
                          p_env +  ggtitle("b) state space"),
                          common.legend = T,ncol=1,nrow=2,legend = "right")
