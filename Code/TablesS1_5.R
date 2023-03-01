@@ -26,9 +26,9 @@ tableS5 <- bayestestR::describe_posterior(ews.mod.detrend.mth.ml, ci = 0.95, tes
 #Export Tables
 ############ 
 
-write.csv(tableS1,"Results/table_S1.csv")
-write.csv(tableS2,"Results/table_S2.csv")
-write.csv(tableS3,"Results/table_S3.csv")
-write.csv(tableS4,"Results/table_S4.csv")
-write.csv(tableS4,"Results/table_S5.csv")
+write.csv(tableS1,"Results/supplementary_tables/table_S1.csv")
+write.csv(tableS2,"Results/supplementary_tables/table_S2.csv")
+write.csv(tableS3,"Results/supplementary_tables/table_S3.csv")
+write.csv(tableS4,"Results/supplementary_tables/table_S4.csv")
+write.csv(tableS5,"Results/supplementary_tables/table_S5.csv")
 
