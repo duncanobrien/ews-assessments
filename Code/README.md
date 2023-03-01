@@ -2,6 +2,8 @@
 
 ## Recommended code workflow
 
+[*aggregated_plank_genus.R*](aggregated_plank_genus.R) - examples of how plankton data is wrangled prior to early warning signal assessment.
+
 [*lake_state_spaces.R*](lake_state_spaces.R) - from the raw plankton densities, fit threshold generalised additive models to both plankton time series and environmental state spaces. Coherence in break points between the two models indicates a critical transition.
 
 [*plankton_ews_assessments.R*](plankton_ews_assessments.R) - from the processed plankton densities, assess each time series using the five forms of early warning signal (EWS): univariate rolling windows, univariate expanding windows, multivariate rolling windows, multivariate expanding windows and machine learning (represented by [EWSNet](https://doi.org/10.1098/rsos.211475)).
