@@ -226,7 +226,7 @@ ews.mod.detrend.mth.uni.roll <- brms::brm(brms::bf(total_success | trials(offset
                                      control = list(adapt_delta =0.99, max_treedepth = 20,stepsize = 0.01),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 #linear_stl
-ews.mod.detrend.mth.uni.exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+ews_mod_detrend_mth_uni_exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                           data = computation_data[computation_data$res == "Monthly" & grepl("univariate_expanding",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                            mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_expanding_none_none"))
                                          ,
@@ -240,7 +240,7 @@ ews.mod.detrend.mth.uni.exp <- brms::brm(brms::bf(total_success | trials(offset)
                                           control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                           seed = 12345, cores = 4,sample_prior = TRUE)
 #none-decompose
-ews.mod.detrend.mth.multi.exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+ews_mod_detrend_mth_multi_exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                       data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_expanding",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                         mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_expanding_none_none"))
                                       ,
@@ -254,7 +254,7 @@ ews.mod.detrend.mth.multi.exp <- brms::brm(brms::bf(total_success | trials(offse
                                       control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
 #gaussian-average
-ews.mod.detrend.mth.multi.roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+ews_mod_detrend_mth_multi_roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                            data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                              mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_rolling_none_none"))
                                            ,
@@ -268,7 +268,7 @@ ews.mod.detrend.mth.multi.roll <- brms::brm(brms::bf(total_success | trials(offs
                                            control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                            seed = 12345, cores = 4,sample_prior = TRUE)
 #gaussian_none
-ews.mod.detrend.mth.ml <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+ews_mod_detrend_mth_ml <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                       data = computation_data[computation_data$res == "Monthly" & grepl("ML",computation_data$method_code)  & !(computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington")),] |>
                                       mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_ML_none_none"))
                                     ,
@@ -282,28 +282,33 @@ ews.mod.detrend.mth.ml <- brms::brm(brms::bf(total_success | trials(offset) ~ co
                                       control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
 #none-none/none-decompose
+saveRDS(ews_mod_detrend_mth_uni_roll,file = "Results/supplementary_info/ews_mod_detrend_mth_uni_roll.rds")
+saveRDS(ews_mod_detrend_mth_uni_exp,file = "Results/supplementary_info/ews_mod_detrend_mth_uni_exp.rds")
+saveRDS(ews_mod_detrend_mth_multi_roll,file = "Results/supplementary_info/ews_mod_detrend_mth_multi_roll.rds")
+saveRDS(ews_mod_detrend_mth_multi_exp,file = "Results/supplementary_info/ews_mod_detrend_mth_multi_exp.rds")
+saveRDS(ews_mod_detrend_mth_ml,file = "Results/supplementary_info/ews_mod_detrend_mth_ml.rds")
 
-dat_detrend_trials_alt <-  ews.mod.detrend.mth.uni.roll |>
+dat_detrend_trials_alt <-  ews_mod_detrend_mth_uni_roll |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_combo_code", "", .variable),
          .variable = gsub("b_Intercept", "univariate_rolling_none_none", .variable) ) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
-  rbind(ews.mod.detrend.mth.uni.exp |>
+  rbind(ews_mod_detrend_mth_uni_exp |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_combo_code", "", .variable),
                  .variable = gsub("b_Intercept", "univariate_expanding_none_none", .variable) ) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5))) |>
-  rbind(ews.mod.detrend.mth.multi.roll |>
+  rbind(ews_mod_detrend_mth_multi_roll |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_combo_code", "", .variable),
                  .variable = gsub("b_Intercept", "multivariate_rolling_none_none", .variable) ) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5))) |>
-  rbind(ews.mod.detrend.mth.multi.exp |>
+  rbind(ews_mod_detrend_mth_multi_exp |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_combo_code", "", .variable),
                  .variable = gsub("b_Intercept", "multivariate_expanding_none_none", .variable) ) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5))) |>
-  rbind(ews.mod.detrend.mth.ml |>
+  rbind(ews_mod_detrend_mth_ml |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_combo_code", "", .variable),
                  .variable = gsub("b_Intercept", "univariate_ML_none_none", .variable) ) |> 
@@ -337,12 +342,11 @@ ggplot(subset(dat_detrend_trials_alt,.width == 0.95),
         panel.grid.minor = element_blank())
 
 
-
 ##########################################################################################
 # Compare Indicators (Gaussian detrend and Average deseason)
 ##########################################################################################
 
-ews.mod.metric.mth.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
+ews_mod_metric_mth_cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
                                                  subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                     iter = its,
@@ -355,7 +359,7 @@ ews.mod.metric.mth.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ me
                                     control = list(adapt_delta = .975, max_treedepth = 20),
                                     seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
+ews_mod_metric_yr_cond<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code/outcome) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                    iter = its,
@@ -369,23 +373,13 @@ ews.mod.metric.yr.cond<- brms::brm(brms::bf(total_success | trials(offset) ~ met
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 #bayestestR::describe_posterior(ews.mod.metric.mth.cond, ci = 0.95, test="none")
 
-
-brms::mcmc_plot(ews.mod.metric.mth.cond, 
-                type = "areas",
-                #type = "intervals",
-                prob = 0.95)
-summary(ews.mod.metric.mth.cond)
-inv_logit_scaled(fixef(ews.mod.metric.mth.cond)[,1])
-inv_logit_scaled(fixef(ews.mod.metric.yr.cond)[,1])
-
-
-dat_metric_trials <-  ews.mod.metric.mth.cond |>
+dat_metric_trials <-  ews_mod_metric_mth_cond |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"ML","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.metric.yr.cond |>
+  rbind(ews_mod_metric_yr_cond |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -393,12 +387,12 @@ dat_metric_trials <-  ews.mod.metric.mth.cond |>
                  res = "Yearly")) |>
   mutate(.variable = gsub("P"," + ",.variable))
 
-dat_metric_halfeye <- ews.mod.metric.mth.cond |>
+dat_metric_halfeye <- ews_mod_metric_mth_cond |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"ML","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.metric.yr.cond |>
+  rbind( ews_mod_metric_yr_cond |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"ML","multivariate")),
@@ -434,7 +428,7 @@ all_metric_plot <- ggplot(dat_metric_trials,aes(y = .variable, x = .value)) +
 # Compare Computation Methods
 ##########################################################################################
 
-ews.mod.method.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
+ews_mod_method_mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
                                 data = rbind(subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
                                       subset(computation_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                                 iter = its,
@@ -446,9 +440,8 @@ ews.mod.method.mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method
                                 chains = 2,
                                 control = list(adapt_delta = .99, max_treedepth = 20),
                                 seed = 12345, cores = 4,sample_prior = TRUE)
-inv_logit_scaled(fixef(ews.mod.method.mth)[,1])
 
-ews.mod.method.yr<- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
+ews_mod_method_yr<- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
                               data =  rbind(subset(computation_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
                                             subset(computation_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
                               iter = its,
@@ -461,13 +454,13 @@ ews.mod.method.yr<- brms::brm(brms::bf(total_success | trials(offset) ~ method_c
                               control = list(adapt_delta = .99, max_treedepth = 20),
                               seed = 12345, cores = 4,sample_prior = TRUE)
 
-dat_method_trials <-  ews.mod.method.mth |>
+dat_method_trials <-  ews_mod_method_mth |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_method_code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("multivariate",.variable),"multivariate",ifelse(grepl("ML",.variable),"EWSNet","univariate")),
          res = "Monthly") |>
-  rbind(ews.mod.method.yr |>
+  rbind(ews_mod_method_yr |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_method_code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -475,12 +468,12 @@ dat_method_trials <-  ews.mod.method.mth |>
                  res = "Yearly")) |>
     mutate(.variable = forcats::fct_reorder(.variable,.value,.fun = mean,.desc = FALSE)) #reorder variable in to increasing ability
     
-dat_method_halfeye <- ews.mod.method.mth |>
+dat_method_halfeye <- ews_mod_method_mth |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_method_code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("multivariate",.variable),"multivariate",ifelse(grepl("ML",.variable),"EWSNet","univariate")),
          res = "Monthly") |>
-  rbind( ews.mod.method.yr |>
+  rbind( ews_mod_method_yr |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_method_code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("multivariate",.variable),"multivariate",ifelse(grepl("ML",.variable),"EWSNet","univariate")),
@@ -523,7 +516,7 @@ ggsave(ggplot(dat_method_trials,aes(y = .variable, x = .value)) +
 # Compare Metrics' True Positive Rate
 ##########################################################################################
 
-ews.mod.metric.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
+ews_mod_metric_mth_true <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                      iter = its,
@@ -536,7 +529,7 @@ ews.mod.metric.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ m
                                      control = list(adapt_delta = .99, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
+ews_mod_metric_yr_true<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                    iter = its,
@@ -549,13 +542,13 @@ ews.mod.metric.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ met
                                    control = list(adapt_delta = .99, max_treedepth = 20),
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 
-dat_metric_true_trials <-  ews.mod.metric.mth.true |>
+dat_metric_true_trials <-  ews_mod_metric_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.metric.yr.true |>
+  rbind(ews_mod_metric_yr_true |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -564,12 +557,12 @@ dat_metric_true_trials <-  ews.mod.metric.mth.true |>
   mutate(.variable = gsub("P"," + ",.variable)) |>
   mutate(.variable = forcats::fct_reorder(.variable,.value,.fun = mean,.desc = FALSE))  #reorder variable in to increasing ability
 
-dat_metric_true_halfeye <- ews.mod.metric.mth.true |>
+dat_metric_true_halfeye <- ews_mod_metric_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.metric.yr.true |>
+  rbind( ews_mod_metric_yr_true |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
@@ -606,7 +599,7 @@ metric_true_plot <- ggplot(dat_metric_true_trials |>
 ##########################################################################################
 # Compare Metrics' False Negative Rate
 ##########################################################################################
-ews.mod.metric.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
+ews_mod_metric_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                      iter = its,
@@ -619,7 +612,7 @@ ews.mod.metric.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ 
                                      control = list(adapt_delta = .99, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
+ews_mod_metric_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                    iter = its,
@@ -633,13 +626,13 @@ ews.mod.metric.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ me
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 
 
-dat_metric_false_trials <-  ews.mod.metric.mth.false |>
+dat_metric_false_trials <-  ews_mod_metric_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.metric.yr.false |>
+  rbind(ews_mod_metric_yr_false |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -648,12 +641,12 @@ dat_metric_false_trials <-  ews.mod.metric.mth.false |>
   mutate(.variable = gsub("P"," + ",.variable)) |>
   mutate(.variable = factor(.variable,levels = levels(dat_metric_true_trials$.variable)))  #reorder variable in to increasing ability based upon true postive results
 
-dat_metric_false_halfeye <- ews.mod.metric.mth.false |>
+dat_metric_false_halfeye <- ews_mod_metric_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.metric.yr.false |>
+  rbind( ews_mod_metric_yr_false |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
@@ -712,7 +705,7 @@ ggsave(metric_true_plot +
 # Compare Indicators' True Positive Rate
 ##########################################################################################
 
-ews.mod.ind.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews_mod_ind_mth_true <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                      iter = its,
@@ -725,7 +718,7 @@ ews.mod.ind.mth.true <- brms::brm(brms::bf(total_success | trials(offset) ~ indi
                                      control = list(adapt_delta = .975, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.ind.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews_mod_ind_yr_true<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                    iter = its,
@@ -738,13 +731,13 @@ ews.mod.ind.yr.true<- brms::brm(brms::bf(total_success | trials(offset) ~ indica
                                    control = list(adapt_delta = .975, max_treedepth = 20),
                                    seed = 12345, cores = 4,sample_prior = TRUE)
 
-dat_ind_true_trials <-  ews.mod.ind.mth.true |>
+dat_ind_true_trials <-  ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.ind.yr.true |>
+  rbind(ews_mod_ind_yr_true |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -754,12 +747,12 @@ dat_ind_true_trials <-  ews.mod.ind.mth.true |>
          method_code = gsub(".*_", "",.variable)) |>
   mutate(.variable = forcats::fct_reorder(.variable,.value,.fun = mean,.desc = FALSE))  #reorder variable in to increasing ability
 
-dat_ind_true_halfeye <- ews.mod.ind.mth.true |>
+dat_ind_true_halfeye <- ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.ind.yr.true |>
+  rbind( ews_mod_ind_yr_true |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_indicator", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
@@ -800,7 +793,7 @@ tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_ra
 ##########################################################################################
 # Compare Indicators' False Negative Rate
 ##########################################################################################
-ews.mod.ind.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews_mod_ind_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
                                       data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                    subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                       iter = its,
@@ -813,7 +806,7 @@ ews.mod.ind.mth.false <- brms::brm(brms::bf(total_success | trials(offset) ~ ind
                                       control = list(adapt_delta = .975, max_treedepth = 20),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.ind.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
+ews_mod_ind_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
                                     data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                  subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                     iter = its,
@@ -827,13 +820,13 @@ ews.mod.ind.yr.false<- brms::brm(brms::bf(total_success | trials(offset) ~ indic
                                     seed = 12345, cores = 4,sample_prior = TRUE)
 
 
-dat_ind_false_trials <-  ews.mod.ind.mth.false |>
+dat_ind_false_trials <-  ews_mod_ind_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.ind.yr.false |>
+  rbind(ews_mod_ind_yr_false |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -843,12 +836,12 @@ dat_ind_false_trials <-  ews.mod.ind.mth.false |>
          method_code = gsub(".*_", "",.variable)) |>
   mutate(.variable = factor(.variable,levels = levels(dat_ind_true_trials$.variable)))  #reorder variable in to increasing ability based upon true postive results
 
-dat_ind_false_halfeye <- ews.mod.ind.mth.false |>
+dat_ind_false_halfeye <- ews_mod_ind_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.ind.yr.false |>
+  rbind( ews_mod_ind_yr_false |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_indicator", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
@@ -903,7 +896,7 @@ ggsave(ind_true_plot +
 # Compare Indicators (Lakes)
 ##########################################################################################
 
-ews.mod.metric.mth.lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
+ews_mod_metric_mth_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" ),
                                                  subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),                                    iter = its,
                                     thin = thn,
@@ -915,7 +908,7 @@ ews.mod.metric.mth.lake<- brms::brm(brms::bf(total_success | trials(offset) ~ me
                                     control = list(adapt_delta = .975, max_treedepth = 20),
                                     seed = 12345, cores = 4,sample_prior = TRUE)
 
-ews.mod.metric.yr.lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
+ews_mod_metric_yr_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" ),
                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),                                       iter = its,
                                    thin = thn,
@@ -929,22 +922,21 @@ ews.mod.metric.yr.lake<- brms::brm(brms::bf(total_success | trials(offset) ~ met
 #bayestestR::describe_posterior(ews.mod.metric.mth.cond, ci = 0.95, test="none")
 
 
-brms::mcmc_plot(ews.mod.metric.mth.lake, 
+brms::mcmc_plot(ews_mod_metric_mth_lake, 
                 type = "areas",
                 #type = "intervals",
                 prob = 0.95)
-summary(ews.mod.metric.mth.cond)
-inv_logit_scaled(fixef(ews.mod.metric.mth.lake)[,1])
-inv_logit_scaled(fixef(ews.mod.metric.yr.lake)[,1])
+inv_logit_scaled(fixef(ews_mod_metric_mth_lake)[,1])
+inv_logit_scaled(fixef(ews_mod_metric_mth_lake)[,1])
 
 
-dat_metric_lake_trials <-  ews.mod.metric.mth.lake |>
+dat_metric_lake_trials <-  ews_mod_metric_mth_lake |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind(ews.mod.metric.yr.lake |>
+  rbind(ews_mod_metric_yr_lake |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
@@ -955,12 +947,12 @@ dat_metric_lake_trials <-  ews.mod.metric.mth.lake |>
   mutate(lake = gsub("lake","",lake))
 
 
-dat_metric_lake_halfeye <- ews.mod.metric.mth.lake |>
+dat_metric_lake_halfeye <- ews_mod_metric_mth_lake |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
   mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
          res = "Monthly") |>
-  rbind( ews.mod.metric.yr.lake |>
+  rbind( ews_mod_metric_yr_lake |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_metric.code", "", .variable)) |> 
            mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
