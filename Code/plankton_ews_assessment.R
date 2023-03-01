@@ -1,7 +1,7 @@
 require(dplyr)
 require(EWSmethods)
 require(foreach)
-load("Data/wrangled_genus_plank_data.Rdata")
+load("Data/wrangled_genus_plank_data.Rdata") #data wrangled to genus level and trimmed prior to TGAM estimated transition dates  
 
 lapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
             wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
@@ -9,14 +9,14 @@ lapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
             wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat),
        function(x){
          
-         if(any(stringr::str_length(x[,1])>4)){
+         if(any(stringr::str_length(x[,1])>4)){ #if monthly data, drop timeseries that are 0 for longer than a year
            x <- x |>
              select(-c(pca1,pca2))|>
              select(where(function(x){all(rle(x)$lengths[rle(x)$values == 0] < 12)}))
          }else if(all(stringr::str_length(x[,1])==4)){
            x <- x |>
              select(-c(pca1,pca2))|>
-             select(where(function(x){all(rle(x)$lengths[rle(x)$values == 0] < 2)}))
+             select(where(function(x){all(rle(x)$lengths[rle(x)$values == 0] < 2)})) #if yearly data, drop timeseries that are 0 for longer than a year
          }
          return(x)
        }) |>
@@ -38,10 +38,10 @@ exp_multi_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ
                                      FUN = function(x){
                                        
                                        sub_dat <- x[sapply(colnames(x),FUN = function(i){
-                                         mean(x[,i] == min(x[,i])) <= 0.47
+                                         mean(x[,i] == min(x[,i])) <= 0.47 #drop time series further if more than 47% of time series is minimum value. Is required or covariance and maf measures fail due to perfect correlation
                                        })]
                                        
-                                       out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                       out <- lapply(c("none","linear","gaussian","loess"),function(j){ #detrend 
                                          if(j != "none"){
                                            sub_dat <- EWSmethods::detrend_ts(sub_dat,method = j,span=0.5)   
                                            sub_dat[,-1] <- sapply(colnames(sub_dat)[-1],FUN = function(i){
@@ -53,7 +53,7 @@ exp_multi_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ
                                            
                                            if(k != "none"){
                                              
-                                             if(any(stringr::str_length(sub_dat[,1])>4)){
+                                             if(any(stringr::str_length(sub_dat[,1])>4)){ #deseason if monthly data
                                                sub_dat[,1] <- zoo::as.Date(zoo::as.yearmon(x[,1]))
                                                sub_dat <- EWSmethods::deseason_ts(sub_dat,increment = "month", method = k,order = "ymd")
                                                sub_dat[,1] <- as.numeric(zoo::as.yearmon(sub_dat[,1])) #convert from date back to numeric for rbind

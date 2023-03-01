@@ -11,7 +11,7 @@ require(brms)
 load(file = "Results/ews_raw_data_a.RData")
 load(file = "Results/ews_raw_data_b.RData")
 load(file = "Results/ews_raw_data_c.RData")
-exp_unicomp <- rbind(exp_uni_phyto,exp_uni_zoo)
+exp_unicomp <- rbind(exp_uni_phyto,exp_uni_zoo) #merge separated expanding univariate EWSs as file too large for Github
 
 source("Code/extract_ews_pred_fn.R")
 
