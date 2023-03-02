@@ -831,15 +831,14 @@ ind_true_plot3 <- ggplot(data = dat_ind_true_trials |>
                                               reference = paste(variate,method_code,sep = "_")
                                       ), variate != "EWSNet"),
                        aes(fill=reference,group=method_code),alpha=0.65,position = position_dodge(width=0.65),normalize = "panels") +
-  
-  scale_fill_manual(values=c("#529928", "#5d3099","#160B24","#bfbd3d","#403F14"),
-                    labels = c("EWSNet", "Multivariate\nrolling", "Multivariate\nexpanding", "Univariate\nrolling", "Univariate\nexpanding"))+
+  scale_fill_manual(values=c("#529928", "#160B24","#5d3099","#403F14","#bfbd3d"),
+                    labels = c("EWSNet", "Multivariate\nexpanding","Multivariate\nrolling",  "Univariate\nexpanding","Univariate\nrolling"))+
   tidybayes::geom_pointinterval(data = ~subset(.,method_code %in% c("expanding","rolling")),aes(xmin = .lower, xmax = .upper,group = method_code),colour = "black",position = position_dodge(width=0.65),interval_size_range = c(0.4, 1.2)) +
   tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
   labs(x="True positive prediction probability", y = "Early warning signal indicator",
        fill = "EWS method",colour = "Computation") +
   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
+  coord_cartesian(xlim = c(-4,4))+
   facet_grid(variate~res,scales = "free_y",space = "free")+
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
@@ -986,23 +985,25 @@ ind_false_plot3 <- ggplot(data = dat_ind_false_trials |>
        aes(y = .variable, x = .value)) +
   geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
   tidybayes::stat_slab(data= subset(dat_ind_false_halfeye |>
-                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                      mutate( .variable = sub("_.*", "",.variable),
+                                              method_code = ifelse(method_code == "ML","EWSNet",method_code),
                                               reference = paste(variate,method_code,sep = "_")),
                                     method_code == "EWSNet"), alpha=0.5, aes(fill=reference),normalize = "panels") +
   tidybayes::stat_slab(data= subset(dat_ind_false_halfeye |>
-                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                      mutate( .variable = sub("_.*", "",.variable),
+                                              method_code = ifelse(method_code == "ML","EWSNet",method_code),
                                               reference = paste(variate,method_code,sep = "_")
                                       ), variate != "EWSNet"),
                        aes(fill=reference,group=method_code),alpha=0.65,position = position_dodge(width=0.65),normalize = "panels") +
 
-  scale_fill_manual(values=c("#529928", "#5d3099","#160B24","#bfbd3d","#403F14"),
-                    labels = c("EWSNet", "Multivariate\nrolling", "Multivariate\nexpanding", "Univariate\nrolling", "Univariate\nexpanding"))+
+  scale_fill_manual(values=c("#529928", "#160B24","#5d3099","#403F14","#bfbd3d"),
+                    labels = c("EWSNet", "Multivariate\nexpanding","Multivariate\nrolling",  "Univariate\nexpanding","Univariate\nrolling"))+
   tidybayes::geom_pointinterval(data = ~subset(.,method_code %in% c("expanding","rolling")),aes(xmin = .lower, xmax = .upper,group = method_code),colour = "black",position = position_dodge(width=0.65),interval_size_range = c(0.4, 1.2)) +
   tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
   labs(x="True positive prediction probability", y = "Early warning signal indicator",
        fill = "EWS method",colour = "Computation") +
   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
+  coord_cartesian(xlim = c(-4,4))+
   facet_grid(variate~res,scales = "free_y",space = "free")+
   theme_bw()+
   theme(axis.title.y =  element_blank(),
