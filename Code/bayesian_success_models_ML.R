@@ -168,7 +168,6 @@ all_ews_data <- as.data.table(suc_ewsnet_max_comp) %>%
   #rbind(as.data.table(suc_roll_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
   rbind(as.data.table(suc_roll_perm_multicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
   rbind(as.data.table(suc_roll_perm_unicomp)[,.SD[1], by = c("data_source","troph_level","metric.code","lake","res","detrend_meth","deseason_meth")][,c("data_source","troph_level","metric.code","lake","res","method", "computation","prediction","detrend_meth","deseason_meth")]) %>%
-  
   .[,outcome := ifelse(prediction %in% c("match","prior"),
                        1,0)] %>%
   .[,variate := ifelse(grepl("multivariate",method),"multivariate","univariate")]%>%
@@ -790,6 +789,63 @@ tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_ra
   theme_bw()+
   theme(panel.grid.minor = element_blank())  
 
+
+
+ind_true_plot2 <- ggplot(data = dat_ind_true_trials |>   
+         mutate(.variable = sub("_.*", "",.variable),
+                computation = sub("*._", "",method_code),
+                computation = ifelse(computation == "ML","EWSNet",computation)) |>
+         filter(.width == 0.95),
+       aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "ML"), alpha=0.5, aes(fill=variate)) +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "expanding" & variate == "univariate"), aes(fill=variate),alpha=0.5,) +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "expanding" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "rolling" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "rolling" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
+  scale_fill_manual(values=c("#529928", "#5d3099","#bfbd3d"))+
+  tidybayes::geom_pointinterval(data = ~subset(.,computation %in% c("expanding","EWSNet")),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "black") +
+  tidybayes::geom_pointinterval(data = ~subset(.,computation == "rolling"),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "grey") +
+  labs(x="True positive prediction probability", y = "Early warning signal indicator",
+       colour = "EWS method",fill = "EWS method",alpha = "Computation") +
+  scale_alpha_manual(breaks = c("rolling","expanding"), values=rep(0.75,3),labels = c("rolling","expanding/\nEWSNet"))+
+  guides(alpha = guide_legend(override.aes = list(colour = c("grey","black")) ) )+
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  facet_grid(variate~res,scales = "free_y",space = "free")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank()) 
+
+ind_true_plot3 <- ggplot(data = dat_ind_true_trials |>   
+                           mutate(.variable = sub("_.*", "",.variable),
+                                  method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                  reference = paste(variate,method_code,sep = "_")),
+                         aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye |>
+                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                              reference = paste(variate,method_code,sep = "_")),
+                                    method_code == "EWSNet"), alpha=0.5, aes(fill=reference),normalize = "panels") +
+  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye |>
+                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                              reference = paste(variate,method_code,sep = "_")
+                                      ), variate != "EWSNet"),
+                       aes(fill=reference,group=method_code),alpha=0.65,position = position_dodge(width=0.65),normalize = "panels") +
+  
+  scale_fill_manual(values=c("#529928", "#5d3099","#160B24","#bfbd3d","#403F14"),
+                    labels = c("EWSNet", "Multivariate\nrolling", "Multivariate\nexpanding", "Univariate\nrolling", "Univariate\nexpanding"))+
+  tidybayes::geom_pointinterval(data = ~subset(.,method_code %in% c("expanding","rolling")),aes(xmin = .lower, xmax = .upper,group = method_code),colour = "black",position = position_dodge(width=0.65),interval_size_range = c(0.4, 1.2)) +
+  tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
+  labs(x="True positive prediction probability", y = "Early warning signal indicator",
+       fill = "EWS method",colour = "Computation") +
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  facet_grid(variate~res,scales = "free_y",space = "free")+
+  theme_bw()+
+  theme(panel.grid.minor = element_blank(),
+        legend.key.size = unit(1.5, 'lines')) 
+
+
 ##########################################################################################
 # Compare Indicators' False Negative Rate
 ##########################################################################################
@@ -802,8 +858,8 @@ ews_mod_ind_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ ind
                                       prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                                prior(normal(1, 1),class = sd)),
                                       family = binomial(link = "logit"), 
-                                      chains = 2,
-                                      control = list(adapt_delta = .975, max_treedepth = 20),
+                                      chains = 4,
+                                      control = list(adapt_delta = .99, max_treedepth = 20),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
 
 ews_mod_ind_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
@@ -815,7 +871,7 @@ ews_mod_ind_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ indic
                                     prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                              prior(normal(1, 1),class = sd)),
                                     family = binomial(link = "logit"), 
-                                    chains = 2,
+                                    chains = 4,
                                     control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                     seed = 12345, cores = 4,sample_prior = TRUE)
 
@@ -892,13 +948,81 @@ ggsave(ind_true_plot +
          labs(fill="EWS method"),
        filename = "/Users/ul20791/Downloads/eg_bayes_fig2.pdf",width = 10,height = 6)
 
+
+
+
+ind_false_plot2 <- ggplot(data = dat_ind_false_trials |>   
+         mutate(.variable = sub("_.*", "",.variable),
+                computation = sub("*._", "",method_code),
+                computation = ifelse(computation == "ML","EWSNet",computation)) |>
+         filter(.width == 0.95),
+       aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "ML"), alpha=0.5, aes(fill=variate)) +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "expanding" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "expanding" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "rolling" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "rolling" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
+  scale_fill_manual(values=c("#529928", "#5d3099","#bfbd3d"))+
+  tidybayes::geom_pointinterval(data = ~subset(.,computation %in% c("expanding","EWSNet")),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "black") +
+  tidybayes::geom_pointinterval(data = ~subset(.,computation == "rolling"),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "grey") +
+  labs(x="True positive prediction probability", y = "Early warning signal indicator",
+       colour = "EWS method",fill = "EWS method",alpha = "Computation") +
+  scale_alpha_manual(breaks = c("rolling","expanding"), values=rep(0.75,3),labels = c("rolling","expanding/\nEWSNet"))+
+  guides(alpha = guide_legend(override.aes = list(colour = c("grey","black")) ) )+
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  facet_grid(variate~res,scales = "free_y",space = "free")+
+  theme_bw()+
+  theme(axis.title.y =  element_blank(),
+        axis.text.y =  element_blank(),
+        panel.grid.minor = element_blank())      
+
+
+ind_false_plot3 <- ggplot(data = dat_ind_false_trials |>   
+         mutate(.variable = sub("_.*", "",.variable),
+                method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                reference = paste(variate,method_code,sep = "_")),
+       aes(y = .variable, x = .value)) +
+  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye |>
+                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                              reference = paste(variate,method_code,sep = "_")),
+                                    method_code == "EWSNet"), alpha=0.5, aes(fill=reference),normalize = "panels") +
+  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye |>
+                                      mutate( method_code = ifelse(method_code == "ML","EWSNet",method_code),
+                                              reference = paste(variate,method_code,sep = "_")
+                                      ), variate != "EWSNet"),
+                       aes(fill=reference,group=method_code),alpha=0.65,position = position_dodge(width=0.65),normalize = "panels") +
+
+  scale_fill_manual(values=c("#529928", "#5d3099","#160B24","#bfbd3d","#403F14"),
+                    labels = c("EWSNet", "Multivariate\nrolling", "Multivariate\nexpanding", "Univariate\nrolling", "Univariate\nexpanding"))+
+  tidybayes::geom_pointinterval(data = ~subset(.,method_code %in% c("expanding","rolling")),aes(xmin = .lower, xmax = .upper,group = method_code),colour = "black",position = position_dodge(width=0.65),interval_size_range = c(0.4, 1.2)) +
+  tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
+  labs(x="True positive prediction probability", y = "Early warning signal indicator",
+       fill = "EWS method",colour = "Computation") +
+  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+  coord_cartesian(xlim = c(-4.5,4.5))+
+  facet_grid(variate~res,scales = "free_y",space = "free")+
+  theme_bw()+
+  theme(axis.title.y =  element_blank(),
+        axis.text.y =  element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.key.size = unit(1.5, 'lines')) 
+
+ind_true_plot3 +
+  ind_false_plot3 +
+  patchwork::plot_layout(guides = 'collect') + 
+  plot_annotation(tag_levels = 'A')
+
 ##########################################################################################
 # Compare Indicators (Lakes)
 ##########################################################################################
 
 ews_mod_metric_mth_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" ),
-                                                 subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),                                    iter = its,
+                                                 subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),                                    
+                                    iter = its,
                                     thin = thn,
                                     warmup = wrmup,
                                     prior= c(prior(normal(0, 1.2), class = b),
@@ -906,11 +1030,12 @@ ews_mod_metric_mth_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ me
                                     family = binomial(link = "logit"), 
                                     chains = 4,
                                     control = list(adapt_delta = .975, max_treedepth = 20),
-                                    seed = 12345, cores = 4,sample_prior = TRUE)
+                                    seed = 12345, cores = 4)
 
 ews_mod_metric_yr_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code:lake - 1 + (1|method_code/outcome) ), 
                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" ),
-                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),                                       iter = its,
+                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_ML")),                                       
+                                   iter = its,
                                    thin = thn,
                                    warmup = wrmup,
                                    prior= c(prior(normal(0, 1.2), class = b),
@@ -918,7 +1043,7 @@ ews_mod_metric_yr_lake<- brms::brm(brms::bf(total_success | trials(offset) ~ met
                                    family = binomial(link = "logit"), 
                                    chains = 4,
                                    control = list(adapt_delta = .99, max_treedepth = 20),
-                                   seed = 12345, cores = 4,sample_prior = TRUE)
+                                   seed = 12345, cores = 4)
 #bayestestR::describe_posterior(ews.mod.metric.mth.cond, ci = 0.95, test="none")
 
 
