@@ -1161,6 +1161,9 @@ ewsnet_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26:
 ewsnet_comp <- rbind(ewsnet_phyto,ewsnet_zoo) |>
   mutate(model = "Original")
 
+write.csv(ewsnet_comp,file = "/Users/ul20791/Desktop/ewsnet_comp.csv",row.names=FALSE)
+ewsnet_comp <- read.csv(file = "/Users/ul20791/Desktop/ewsnet_comp.csv")
+
 ################################################################################################################
 ## EWSNet Impulse ##
 ################################################################################################################
@@ -1337,6 +1340,8 @@ ewsnet_impulse_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[
 ewsnet_impulse <- rbind(ewsnet_impulse_phyto,ewsnet_impulse_zoo) |>
   mutate(model = "Impulse")
 
+write.csv(ewsnet_impulse,file = "/Users/ul20791/Desktop/ewsnet_impulse.csv",row.names=FALSE)
+ewsnet_impulse <- read.csv(file = "/Users/ul20791/Desktop/ewsnet_impulse.csv")
 ################################################################################################################
 ## Combine ##
 ################################################################################################################
@@ -1347,3 +1352,6 @@ save(ewsnet_comp,exp_multicomp,roll_unicomp,roll_multicomp,perm_roll_unicomp,per
 save(exp_uni_phyto,file = "Results/ews_raw_data_b.RData")
 save(exp_uni_zoo,file = "Results/ews_raw_data_c.RData")
 save(ewsnet_impulse,file = "Results/ews_raw_data_d.RData")
+
+save(ewsnet_comp,ewsnet_impulse,file = "Results/ews_raw_data_ewsnet.RData")
+
