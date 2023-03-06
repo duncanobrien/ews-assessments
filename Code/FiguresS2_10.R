@@ -3,6 +3,7 @@
 ########################################################################################################################
 require(patchwork)
 require(brms)
+require(ggplot2)
 
 ews_mod_method_mth <- readRDS(file = "Results/ews_models/computation_models/ews_mod_method_mth.rds")
 ews_mod_method_yr <- readRDS(file = "Results/ews_models/computation_models/ews_mod_method_yr.rds")
