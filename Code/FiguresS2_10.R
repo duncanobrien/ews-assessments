@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Supplementary Figures 2 - x #
+# Supplementary Figures 2 - 10 #
 ########################################################################################################################
 require(patchwork)
 require(brms)
@@ -69,6 +69,7 @@ dev.off()
 ############ 
 #Plot posterior predictive checks
 ############ 
+
 ggsave(
   brms::pp_check(ews_mod_method_mth) + 
     ggtitle("Monthly computation\nmodel") +
