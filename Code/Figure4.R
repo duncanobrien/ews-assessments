@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Figure 3 #
+# Figure 4 #
 ########################################################################################################################
 require(tidyverse)
 require(patchwork)
@@ -10,6 +10,22 @@ ews_mod_ind_yr_true <- readRDS(file = "Results/ews_models/indicator_models/ews_m
 ews_mod_ind_mth_false <- readRDS(file = "Results/ews_models/indicator_models/ews_mod_ind_mth_false.rds")
 ews_mod_ind_yr_false <- readRDS(file = "Results/ews_models/indicator_models/ews_mod_ind_yr_false.rds")
 
+#as the back convertion from log odds to probabilities is a sigmoidal function, add scaling function
+#to x axis to represent this. Causes skew of posterior probability distributions on plot
+# labels <- seq(-4,4,2)
+# breaks <-  seq(-4,4,2)
+
+# labels <- c(-4,-2,-1.4,-0.4,0,0.4,1.4,2,4)
+# breaks <- c(-4,-2,-1.4,-0.4,0,0.4,1.4,2,4)
+
+labels <- c(-4,round(brms::logit_scaled(c(0.25,0.5,0.75)),1),4) #ensure breaks @ 0.25 probability intervals
+breaks <- c(-4,round(brms::logit_scaled(c(0.25,0.5,0.75)),1),4)
+
+#back transformation function from log odds to probabilities via inverse logit
+inv_logit_perc <- scales::trans_new("inv_logit_perc",
+                        transform = function(x){suppressWarnings(brms::inv_logit_scaled(x))},
+                        inverse = function(x){suppressWarnings(brms::logit_scaled(x))})
+
 ############ 
 #Extract posterior draws
 ############ 
@@ -17,13 +33,13 @@ dat_ind_true_trials <-  ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
-  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
          res = "Monthly") |>
   rbind(ews_mod_ind_yr_true |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
-          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
                  res = "Yearly")) |>
   mutate(.variable = gsub("P"," + ",.variable),
          method_code = gsub(".*_", "",.variable)) |>
@@ -32,12 +48,12 @@ dat_ind_true_trials <-  ews_mod_ind_mth_true |>
 dat_ind_true_halfeye <- ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
-  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
          res = "Monthly") |>
   rbind( ews_mod_ind_yr_true |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_indicator", "", .variable)) |> 
-           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
                   res = "Yearly"))|>
   mutate(.variable = gsub("P"," + ",.variable),
          method_code = gsub(".*_", "",.variable)) |>
@@ -48,13 +64,13 @@ dat_ind_false_trials <-  ews_mod_ind_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
   tidybayes::median_qi(.width = c(.95, .8, .5)) |>
-  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
          res = "Monthly") |>
   rbind(ews_mod_ind_yr_false |>
           tidybayes::gather_draws(`b.*`,regex = T) |>
           mutate(.variable = gsub("b_indicator", "", .variable)) |> 
           tidybayes::median_qi(.width = c(.95, .8, .5)) |>
-          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+          mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
                  res = "Yearly")) |>
   mutate(.variable = gsub("P"," + ",.variable),
          method_code = gsub(".*_", "",.variable)) |>
@@ -63,12 +79,12 @@ dat_ind_false_trials <-  ews_mod_ind_mth_false |>
 dat_ind_false_halfeye <- ews_mod_ind_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
-  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+  mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
          res = "Monthly") |>
   rbind( ews_mod_ind_yr_false |>
            tidybayes::gather_draws(`b.*`,regex = T) |>
            mutate(.variable = gsub("b_indicator", "", .variable)) |> 
-           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","multivariate")),
+           mutate(variate = ifelse(grepl("ar1|^SD|skew",.variable),"Univariate",ifelse(grepl("scaled|unscaled",.variable),"EWSNet","Multivariate")),
                   res = "Yearly"))|>
   mutate(.variable = gsub("P"," + ",.variable),
          method_code = gsub(".*_", "",.variable)) |>
@@ -100,11 +116,14 @@ ind_true_plot <- ggplot(data = dat_ind_true_trials |>
   tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
   labs(x="True positive prediction probability", y = "Early warning signal indicator",
        fill = "EWS method",colour = "Computation") +
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4,4))+
+  #scale_x_continuous(labels = function(i){round(brms::inv_logit_scaled(i),1)})+
+  #coord_cartesian(xlim = c(-4,4))+
+  scale_x_continuous(labels =  ifelse(is.na(labels),"",round(brms::inv_logit_scaled(labels),1)), breaks = breaks)+
+  coord_trans(x = inv_logit_perc)+
   facet_grid(variate~res,scales = "free_y",space = "free")+
   theme_bw()+
   theme(panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
         legend.key.size = unit(1.5, 'lines')) 
 
 ind_false_plot <- ggplot(data = dat_ind_false_trials |>   
@@ -131,13 +150,16 @@ ind_false_plot <- ggplot(data = dat_ind_false_trials |>
   tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
   labs(x="True negative prediction probability", y = "Early warning signal indicator",
        fill = "EWS method",colour = "Computation") +
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4,4))+
+  #scale_x_continuous(labels = function(i){round(brms::inv_logit_scaled(i),1)})+
+  #coord_cartesian(xlim = c(-4,4))+
+  scale_x_continuous(labels =  ifelse(is.na(labels),"",round(brms::inv_logit_scaled(labels),1)), breaks = breaks)+
+  coord_trans(x = inv_logit_perc)+
   facet_grid(variate~res,scales = "free_y",space = "free")+
   theme_bw()+
   theme(axis.title.y =  element_blank(),
         axis.text.y =  element_blank(),
         panel.grid.minor = element_blank(),
+        panel.grid.major = element_blank(),
         legend.key.size = unit(1.5, 'lines'))
 
 ############ 
@@ -147,4 +169,4 @@ ggsave(ind_true_plot +
          ind_false_plot +
          patchwork::plot_layout(guides = 'collect') + 
          plot_annotation(tag_levels = 'A'),
-       filename = "Figures/figure_4.pdf",width = 10,height = 6)
+       filename = "Figures/figure_4.pdf",width = 9,height = 6)

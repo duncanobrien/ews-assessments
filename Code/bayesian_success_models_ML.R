@@ -1010,7 +1010,7 @@ ggsave(ind_true_plot3 +
   ind_false_plot3 +
   patchwork::plot_layout(guides = 'collect') + 
   plot_annotation(tag_levels = 'A'),
-  filename = "Figures/figure_4.pdf",width = 10,height = 6)
+  filename = "Figures/figure_4.pdf",width = 8,height = 6)
 
 ##########################################################################################
 # Compare Indicators (Lakes)
