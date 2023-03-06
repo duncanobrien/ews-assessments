@@ -13,6 +13,7 @@ load(file = "Results/ews_raw_data_b.RData")
 load(file = "Results/ews_raw_data_c.RData")
 exp_unicomp <- rbind(exp_uni_phyto,exp_uni_zoo) #merge separated expanding univariate EWSs as file too large for Github
 
+load(file = "Results/ews_raw_data_ewsnet.RData")
 source("Code/extract_ews_pred_fn.R")
 
 ##########################################################################################
@@ -61,6 +62,36 @@ suc_ewsnet_max_comp <- lapply(c("none","linear","gaussian","loess"),function(x){
     data.table::rbindlist()
 }) |>
   data.table::rbindlist()
+
+suc_ewsnet_impulse_comp <- lapply(c("none","linear","gaussian","loess"),function(x){
+  
+  lapply(c("none","average","decompose","stl"),function(j){
+    
+    extract_ews_pred(ews.data = subset(ewsnet_impulse,detrend_meth == x & deseason_meth == j)|>
+                       select(-c(detrend_meth,deseason_meth)),
+                     sensitivity = 0.7,
+                     outcome = lake_outcome_troph,
+                     method = "ML") |>
+      mutate(detrend_meth = x,deseason_meth = j)
+  }) |>
+    data.table::rbindlist()
+}) |>
+  data.table::rbindlist() 
+
+suc_ewsnet_impulse_max_comp <- lapply(c("none","linear","gaussian","loess"),function(x){
+  
+  lapply(c("none","average","decompose","stl"),function(j){
+    
+    extract_ews_pred(ews.data = subset(ewsnet_impulse,detrend_meth == x & deseason_meth == j)|>
+                       select(-c(detrend_meth,deseason_meth)),
+                     sensitivity = NULL,
+                     outcome = lake_outcome_troph,
+                     method = "ML") |>
+      mutate(detrend_meth = x,deseason_meth = j)
+  }) |>
+    data.table::rbindlist()
+}) |>
+  data.table::rbindlist() 
 
 suc_exp_multicomp <- lapply(c("none","linear","gaussian","loess"),function(x){
   
@@ -211,7 +242,7 @@ wrmup <- 0.1*its
 ##########################################################################################
 # Compare Detrend/Deseason Methods
 ##########################################################################################
-ews.mod.detrend.mth.uni.roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+ews_mod_detrend_mth_uni_roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                      data = computation_data[computation_data$res == "Monthly" & grepl("univariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                        mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_rolling_none_none"))
                                      ,
@@ -239,6 +270,20 @@ ews_mod_detrend_mth_uni_exp <- brms::brm(brms::bf(total_success | trials(offset)
                                           control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                           seed = 12345, cores = 4,sample_prior = TRUE)
 #none-decompose
+ews_mod_detrend_mth_multi_roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
+                                            data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
+                                              mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_rolling_none_none"))
+                                            ,
+                                            iter = 10000,
+                                            thin =thn,
+                                            warmup = 2000,
+                                            prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
+                                                     prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
+                                            family = binomial(link = "logit"), 
+                                            chains = 4,
+                                            control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
+                                            seed = 12345, cores = 4,sample_prior = TRUE)
+#gaussian_none
 ews_mod_detrend_mth_multi_exp <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                       data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_expanding",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                         mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_expanding_none_none"))
@@ -253,22 +298,8 @@ ews_mod_detrend_mth_multi_exp <- brms::brm(brms::bf(total_success | trials(offse
                                       control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
 #gaussian-average
-ews_mod_detrend_mth_multi_roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
-                                           data = computation_data[computation_data$res == "Monthly" & grepl("multivariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
-                                             mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "multivariate_rolling_none_none"))
-                                           ,
-                                           iter = 10000,
-                                           thin =thn,
-                                           warmup = 2000,
-                                           prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
-                                                    prior(normal(1, 1),class = sd)), #1.2 sd as corresponds to 1% and 99% success rate
-                                           family = binomial(link = "logit"), 
-                                           chains = 4,
-                                           control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
-                                           seed = 12345, cores = 4,sample_prior = TRUE)
-#gaussian_none
 ews_mod_detrend_mth_ml <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
-                                      data = computation_data[computation_data$res == "Monthly" & grepl("ML",computation_data$method_code)  & !(computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington")),] |>
+                                      data = computation_data[computation_data$res == "Monthly" & grepl("ML",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                       mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_ML_none_none"))
                                     ,
                                       iter = 10000,
@@ -280,7 +311,7 @@ ews_mod_detrend_mth_ml <- brms::brm(brms::bf(total_success | trials(offset) ~ co
                                       chains = 4,
                                       control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
-#none-none/none-decompose
+#gaussian-none
 saveRDS(ews_mod_detrend_mth_uni_roll,file = "Results/supplementary_info/ews_mod_detrend_mth_uni_roll.rds")
 saveRDS(ews_mod_detrend_mth_uni_exp,file = "Results/supplementary_info/ews_mod_detrend_mth_uni_exp.rds")
 saveRDS(ews_mod_detrend_mth_multi_roll,file = "Results/supplementary_info/ews_mod_detrend_mth_multi_roll.rds")
@@ -428,30 +459,38 @@ all_metric_plot <- ggplot(dat_metric_trials,aes(y = .variable, x = .value)) +
 ##########################################################################################
 
 ews_mod_method_mth <- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
-                                data = rbind(subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
-                                      subset(computation_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
+                                data = rbind(subset(computation_data, res  == "Monthly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling"),
+                                             subset(computation_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding"),
+                                             subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling"),
+                                             subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding"),
+                                             subset(computation_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML")),
                                 iter = its,
                                 thin = thn,
                                 warmup = wrmup,
                                 prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                          prior(normal(1, 1),class = sd)),
                                 family = binomial(link = "logit"), 
-                                chains = 2,
+                                chains = 4,
                                 control = list(adapt_delta = .99, max_treedepth = 20),
                                 seed = 12345, cores = 4,sample_prior = TRUE)
+saveRDS(ews_mod_method_mth,file = "Results/ews_models/computation_models/ews_mod_method_mth.rds")
 
 ews_mod_method_yr<- brms::brm(brms::bf(total_success | trials(offset) ~ method_code - 1 + (1|lake/outcome) ), 
-                              data =  rbind(subset(computation_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML"),
-                                            subset(computation_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML")),
+                              data =  rbind(subset(computation_data, res  == "Yearly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling"),
+                                            subset(computation_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding"),
+                                            subset(computation_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling"),
+                                            subset(computation_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding"),
+                                            subset(computation_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML")),
                               iter = its,
                               thin = thn,
                               warmup = wrmup,
                               prior= c(prior(normal(0, 1.2), class = b,lb= -5.5,ub=5.5),
                                        prior(normal(1, 1),class = sd)),
                               family = binomial(link = "logit"), 
-                              chains = 2,
+                              chains = 4,
                               control = list(adapt_delta = .99, max_treedepth = 20),
                               seed = 12345, cores = 4,sample_prior = TRUE)
+saveRDS(ews_mod_method_yr,file = "Results/ews_models/computation_models/ews_mod_method_yr.rds")
 
 dat_method_trials <-  ews_mod_method_mth |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
@@ -509,7 +548,7 @@ ggsave(ggplot(dat_method_trials,aes(y = .variable, x = .value)) +
                #plot.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF'),
                #panel.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF')
                ),
-       filename = "/Users/ul20791/Downloads/eg_bayes_fig3.pdf",width = 6,height = 5)
+       filename = "Figures/figure_3.pdf",width = 6,height = 5)
 
 ##########################################################################################
 # Compare Metrics' True Positive Rate
@@ -705,8 +744,11 @@ ggsave(metric_true_plot +
 ##########################################################################################
 
 ews_mod_ind_mth_true <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
-                                     data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
-                                                  subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
+                                     data =  rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling" & outcome == "trans"),
+                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding" & outcome == "trans"),
+                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling" & outcome == "trans"),
+                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding" & outcome == "trans"),
+                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                      iter = its,
                                      thin = thn,
                                      warmup = wrmup,
@@ -716,10 +758,14 @@ ews_mod_ind_mth_true <- brms::brm(brms::bf(total_success | trials(offset) ~ indi
                                      chains = 4,
                                      control = list(adapt_delta = .975, max_treedepth = 20),
                                      seed = 12345, cores = 4,sample_prior = TRUE)
+saveRDS(ews_mod_ind_mth_true,file = "Results/ews_models/indicator_models/ews_mod_ind_mth_true.rds")
 
 ews_mod_ind_yr_true<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
-                                   data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "trans"),
-                                                subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
+                                   data =rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling" & outcome == "trans"),
+                                               subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding" & outcome == "trans"),
+                                               subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling" & outcome == "trans"),
+                                               subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding" & outcome == "trans"),
+                                               subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "trans")),
                                    iter = its,
                                    thin = thn,
                                    warmup = wrmup,
@@ -729,6 +775,7 @@ ews_mod_ind_yr_true<- brms::brm(brms::bf(total_success | trials(offset) ~ indica
                                    chains = 4,
                                    control = list(adapt_delta = .975, max_treedepth = 20),
                                    seed = 12345, cores = 4,sample_prior = TRUE)
+saveRDS(ews_mod_ind_yr_true,file = "Results/ews_models/indicator_models/ews_mod_ind_yr_true.rds")
 
 dat_ind_true_trials <-  ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
@@ -764,57 +811,29 @@ dat_ind_true_halfeye <- ews_mod_ind_mth_true |>
 
 
 
-ind_true_plot <- ggplot(dat_ind_true_trials |>   
-                             mutate(.variable = sub("_.*", "",.variable)),aes(y = .variable, x = .value)) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
-  tidybayes::stat_slab(data= dat_ind_true_halfeye, alpha=0.5, aes(fill=variate)) +
-  # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
-  #               aes(xmin=.lower, xmax=.upper,col=variate), 
-  #                width=0, alpha=0.9, size=1.3)+
-  # geom_point(size=4,aes(fill=variate),shape=21) +
-  scale_fill_manual(values=c("#529928",
-                                      "#5d3099",
-                                      "#bfbd3d"))+
-                                        scale_color_manual(values=c("#529928",
-                                                                             "#5d3099",
-                                                                             "#bfbd3d"))+
-tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black" ) +
-  labs(x="True positive prediction probability", y = "Early warning signal indicator") +
-  #coord_cartesian(xlim = c(-4.5,4.5))+
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
-  #facet_wrap(~res)+
-  facet_grid(method_code~res,scales = "free_y")+
-  
-  theme_bw()+
-  theme(panel.grid.minor = element_blank())  
-
-
-
-ind_true_plot2 <- ggplot(data = dat_ind_true_trials |>   
-         mutate(.variable = sub("_.*", "",.variable),
-                computation = sub("*._", "",method_code),
-                computation = ifelse(computation == "ML","EWSNet",computation)) |>
-         filter(.width == 0.95),
-       aes(y = .variable, x = .value)) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
-  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "ML"), alpha=0.5, aes(fill=variate)) +
-  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "expanding" & variate == "univariate"), aes(fill=variate),alpha=0.5,) +
-  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "expanding" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
-  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "rolling" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
-  tidybayes::stat_slab(data= subset(dat_ind_true_halfeye, method_code == "rolling" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
-  scale_fill_manual(values=c("#529928", "#5d3099","#bfbd3d"))+
-  tidybayes::geom_pointinterval(data = ~subset(.,computation %in% c("expanding","EWSNet")),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "black") +
-  tidybayes::geom_pointinterval(data = ~subset(.,computation == "rolling"),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "grey") +
-  labs(x="True positive prediction probability", y = "Early warning signal indicator",
-       colour = "EWS method",fill = "EWS method",alpha = "Computation") +
-  scale_alpha_manual(breaks = c("rolling","expanding"), values=rep(0.75,3),labels = c("rolling","expanding/\nEWSNet"))+
-  guides(alpha = guide_legend(override.aes = list(colour = c("grey","black")) ) )+
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
-  facet_grid(variate~res,scales = "free_y",space = "free")+
-  theme_bw()+
-  theme(panel.grid.minor = element_blank()) 
+# ind_true_plot <- ggplot(dat_ind_true_trials |>   
+#                              mutate(.variable = sub("_.*", "",.variable)),aes(y = .variable, x = .value)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+#   tidybayes::stat_slab(data= dat_ind_true_halfeye, alpha=0.5, aes(fill=variate)) +
+#   # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
+#   #               aes(xmin=.lower, xmax=.upper,col=variate), 
+#   #                width=0, alpha=0.9, size=1.3)+
+#   # geom_point(size=4,aes(fill=variate),shape=21) +
+#   scale_fill_manual(values=c("#529928",
+#                                       "#5d3099",
+#                                       "#bfbd3d"))+
+#                                         scale_color_manual(values=c("#529928",
+#                                                                              "#5d3099",
+#                                                                              "#bfbd3d"))+
+# tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black" ) +
+#   labs(x="True positive prediction probability", y = "Early warning signal indicator") +
+#   #coord_cartesian(xlim = c(-4.5,4.5))+
+#   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+#   coord_cartesian(xlim = c(-4.5,4.5))+
+#   #facet_wrap(~res)+
+#   facet_grid(method_code~res,scales = "free_y",space = "free")+
+#   theme_bw()+
+#   theme(panel.grid.minor = element_blank())  
 
 ind_true_plot3 <- ggplot(data = dat_ind_true_trials |>   
                            mutate(.variable = sub("_.*", "",.variable),
@@ -849,8 +868,11 @@ ind_true_plot3 <- ggplot(data = dat_ind_true_trials |>
 # Compare Indicators' False Negative Rate
 ##########################################################################################
 ews_mod_ind_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
-                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
-                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
+                                      data =  rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling" & outcome == "no.trans"),
+                                                    subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding" & outcome == "no.trans"),
+                                                    subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling" & outcome == "no.trans"),
+                                                    subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding" & outcome == "no.trans"),
+                                                    subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                       iter = its,
                                       thin = thn,
                                       warmup = wrmup,
@@ -860,10 +882,14 @@ ews_mod_ind_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ ind
                                       chains = 4,
                                       control = list(adapt_delta = .99, max_treedepth = 20),
                                       seed = 12345, cores = 4,sample_prior = TRUE)
+saveRDS(ews_mod_ind_mth_false,file = "Results/ews_models/indicator_models/ews_mod_ind_mth_false.rds")
 
 ews_mod_ind_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
-                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
-                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
+                                    data = rbind(subset(metric_data, res  == "Yearly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling" & outcome == "no.trans"),
+                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding" & outcome == "no.trans"),
+                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "multivariate_rolling" & outcome == "no.trans"),
+                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code == "multivariate_expanding" & outcome == "no.trans"),
+                                                 subset(metric_data, res  == "Yearly" & detrend_meth == "gaussian" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
                                     iter = its,
                                     thin = thn,
                                     warmup = wrmup,
@@ -873,7 +899,7 @@ ews_mod_ind_yr_false<- brms::brm(brms::bf(total_success | trials(offset) ~ indic
                                     chains = 4,
                                     control = list(adapt_delta = .99, max_treedepth = 20,stepsize = 0.01),
                                     seed = 12345, cores = 4,sample_prior = TRUE)
-
+saveRDS(ews_mod_ind_yr_false,file = "Results/ews_models/indicator_models/ews_mod_ind_yr_false.rds")
 
 dat_ind_false_trials <-  ews_mod_ind_mth_false |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
@@ -907,76 +933,45 @@ dat_ind_false_halfeye <- ews_mod_ind_mth_false |>
   mutate(.variable = sub("_.*", "",.variable))
 
 
-ind_false_plot <- ggplot(dat_ind_false_trials |>
-                              mutate(.variable = sub("_.*", "",.variable))
-                            ,aes(y = .variable, x = .value)) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
-  tidybayes::stat_slab(data= dat_ind_false_halfeye, alpha=0.5, aes(fill=variate)) +
-  # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
-  #               aes(xmin=.lower, xmax=.upper,col=variate), 
-  #                width=0, alpha=0.9, size=1.3)+
-  # geom_point(size=4,aes(fill=variate),shape=21) +
-  scale_fill_manual(values=c("#529928",
-                                      "#5d3099",
-                                      "#bfbd3d"))+
-scale_color_manual(values=c("#529928","#5d3099","#bfbd3d"))+
-tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black") +
-  labs(x="True negative prediction probability", y = "Early warning signal indicator") +
-  #coord_cartesian(xlim = c(-4.5,4.5))+
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
-  #facet_wrap(~res)+
-  facet_grid(method_code~res,scales = "free_y")+
-  theme_bw()+
-  theme(axis.title.y =  element_blank(),
-        axis.text.y =  element_blank(),
-        panel.grid.minor = element_blank())      
+# ind_false_plot <- ggplot(dat_ind_false_trials |>
+#                               mutate(.variable = sub("_.*", "",.variable))
+#                             ,aes(y = .variable, x = .value)) +
+#   geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
+#   tidybayes::stat_slab(data= dat_ind_false_halfeye, alpha=0.5, aes(fill=variate)) +
+#   # geom_errorbar(data = subset(dat_metric_trials,.width == 0.95), 
+#   #               aes(xmin=.lower, xmax=.upper,col=variate), 
+#   #                width=0, alpha=0.9, size=1.3)+
+#   # geom_point(size=4,aes(fill=variate),shape=21) +
+#   scale_fill_manual(values=c("#529928",
+#                                       "#5d3099",
+#                                       "#bfbd3d"))+
+# scale_color_manual(values=c("#529928","#5d3099","#bfbd3d"))+
+# tidybayes::geom_pointinterval(aes(xmin = .lower, xmax = .upper),interval_size_range = c(0.4, 1.2),colour = "black") +
+#   labs(x="True negative prediction probability", y = "Early warning signal indicator") +
+#   #coord_cartesian(xlim = c(-4.5,4.5))+
+#   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
+#   coord_cartesian(xlim = c(-4.5,4.5))+
+#   #facet_wrap(~res)+
+#   facet_grid(method_code~res,scales = "free_y",space = "free")+
+#   theme_bw()+
+#   theme(axis.title.y =  element_blank(),
+#         axis.text.y =  element_blank(),
+#         panel.grid.minor = element_blank())      
 
 require(patchwork)
 
-ggsave(ind_true_plot +
-         ind_false_plot +
-         patchwork::plot_layout(guides = 'collect') + 
-         plot_annotation(tag_levels = 'a') &
-         theme(plot.tag = element_text(face = 'bold')
-               # ,legend.background = element_rect(fill = '#EFEFEF'),
-               # panel.grid.major = element_line(colour = "grey80"),
-               # plot.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF'),
-               # panel.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF')
-         ) &
-         labs(fill="EWS method"),
-       filename = "/Users/ul20791/Downloads/eg_bayes_fig2.pdf",width = 10,height = 6)
-
-
-
-
-ind_false_plot2 <- ggplot(data = dat_ind_false_trials |>   
-         mutate(.variable = sub("_.*", "",.variable),
-                computation = sub("*._", "",method_code),
-                computation = ifelse(computation == "ML","EWSNet",computation)) |>
-         filter(.width == 0.95),
-       aes(y = .variable, x = .value)) +
-  geom_vline(xintercept = 0, linetype = "dashed", colour="grey50") +
-  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "ML"), alpha=0.5, aes(fill=variate)) +
-  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "expanding" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
-  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "expanding" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
-  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "rolling" & variate == "univariate"), aes(fill=variate),alpha=0.5) +
-  tidybayes::stat_slab(data= subset(dat_ind_false_halfeye, method_code == "rolling" & variate == "multivariate"), aes(fill=variate),alpha=0.5) +
-  scale_fill_manual(values=c("#529928", "#5d3099","#bfbd3d"))+
-  tidybayes::geom_pointinterval(data = ~subset(.,computation %in% c("expanding","EWSNet")),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "black") +
-  tidybayes::geom_pointinterval(data = ~subset(.,computation == "rolling"),aes(xmin = .lower, xmax = .upper,alpha = computation),colour = "grey") +
-  labs(x="True positive prediction probability", y = "Early warning signal indicator",
-       colour = "EWS method",fill = "EWS method",alpha = "Computation") +
-  scale_alpha_manual(breaks = c("rolling","expanding"), values=rep(0.75,3),labels = c("rolling","expanding/\nEWSNet"))+
-  guides(alpha = guide_legend(override.aes = list(colour = c("grey","black")) ) )+
-  scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
-  coord_cartesian(xlim = c(-4.5,4.5))+
-  facet_grid(variate~res,scales = "free_y",space = "free")+
-  theme_bw()+
-  theme(axis.title.y =  element_blank(),
-        axis.text.y =  element_blank(),
-        panel.grid.minor = element_blank())      
-
+# ggsave(ind_true_plot +
+#          ind_false_plot +
+#          patchwork::plot_layout(guides = 'collect') + 
+#          plot_annotation(tag_levels = 'a') &
+#          theme(plot.tag = element_text(face = 'bold')
+#                # ,legend.background = element_rect(fill = '#EFEFEF'),
+#                # panel.grid.major = element_line(colour = "grey80"),
+#                # plot.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF'),
+#                # panel.background = element_rect(fill = '#EFEFEF',colour = '#EFEFEF')
+#          ) &
+#          labs(fill="EWS method"),
+#        filename = "/Users/ul20791/Downloads/eg_bayes_fig2.pdf",width = 10,height = 6)
 
 ind_false_plot3 <- ggplot(data = dat_ind_false_trials |>   
          mutate(.variable = sub("_.*", "",.variable),
@@ -1000,7 +995,7 @@ ind_false_plot3 <- ggplot(data = dat_ind_false_trials |>
                     labels = c("EWSNet", "Multivariate\nexpanding","Multivariate\nrolling",  "Univariate\nexpanding","Univariate\nrolling"))+
   tidybayes::geom_pointinterval(data = ~subset(.,method_code %in% c("expanding","rolling")),aes(xmin = .lower, xmax = .upper,group = method_code),colour = "black",position = position_dodge(width=0.65),interval_size_range = c(0.4, 1.2)) +
   tidybayes::geom_pointinterval(data = ~subset(.,method_code == "EWSNet"),aes(xmin = .lower, xmax = .upper),colour = "black",interval_size_range = c(0.4, 1.2)) +
-  labs(x="True positive prediction probability", y = "Early warning signal indicator",
+  labs(x="True negative prediction probability", y = "Early warning signal indicator",
        fill = "EWS method",colour = "Computation") +
   scale_x_continuous(labels = function(i){round(inv_logit_scaled(i),1)})+
   coord_cartesian(xlim = c(-4,4))+
@@ -1011,10 +1006,11 @@ ind_false_plot3 <- ggplot(data = dat_ind_false_trials |>
         panel.grid.minor = element_blank(),
         legend.key.size = unit(1.5, 'lines')) 
 
-ind_true_plot3 +
+ggsave(ind_true_plot3 +
   ind_false_plot3 +
   patchwork::plot_layout(guides = 'collect') + 
-  plot_annotation(tag_levels = 'A')
+  plot_annotation(tag_levels = 'A'),
+  filename = "Figures/figure_4.pdf",width = 10,height = 6)
 
 ##########################################################################################
 # Compare Indicators (Lakes)
