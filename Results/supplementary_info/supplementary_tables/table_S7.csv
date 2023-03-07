@@ -1,6 +1,6 @@
-"","Parameter","Median","CI_low","CI_high","Rhat","ESS"
-"5","univariate_rolling",-0.759,-1.53,-0.055,1,6738.84
-"3","univariate_expanding",2.171,1.384,2.914,1,6677.44
-"4","EWSNet",-0.243,-1.013,0.457,1,6605.16
-"2","multivariate_rolling",-0.493,-1.285,0.244,1,6744.16
-"1","multivariate_expanding",1.056,0.217,1.847,1,6596.97
+"Parameter","Median","CI_low","CI_high","Rhat","ESS"
+"univariate_rolling",-0.759,-1.53,-0.055,1,6738.84
+"univariate_expanding",2.171,1.384,2.914,1,6677.44
+"EWSNet",-0.243,-1.013,0.457,1,6605.16
+"multivariate_rolling",-0.493,-1.285,0.244,1,6744.16
+"multivariate_expanding",1.056,0.217,1.847,1,6596.97

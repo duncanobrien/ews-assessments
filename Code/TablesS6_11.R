@@ -58,9 +58,9 @@ tableS11 <- bayestestR::describe_posterior(ews_mod_ind_yr_false, ci = 0.95, test
 #Export Tables
 ############ 
 
-write.csv(tableS6,"Results/supplementary_info/supplementary_tables/table_S6.csv")
-write.csv(tableS7,"Results/supplementary_info/supplementary_tables/table_S7.csv")
-write.csv(tableS8,"Results/supplementary_info/supplementary_tables/table_S8.csv")
-write.csv(tableS9,"Results/supplementary_info/supplementary_tables/table_S9.csv")
-write.csv(tableS10,"Results/supplementary_info/supplementary_tables/table_S10.csv")
-write.csv(tableS10,"Results/supplementary_info/supplementary_tables/table_S11.csv")
+write.csv(tableS6,"Results/supplementary_info/supplementary_tables/table_S6.csv",row.names = FALSE)
+write.csv(tableS7,"Results/supplementary_info/supplementary_tables/table_S7.csv",row.names = FALSE)
+write.csv(tableS8,"Results/supplementary_info/supplementary_tables/table_S8.csv",row.names = FALSE)
+write.csv(tableS9,"Results/supplementary_info/supplementary_tables/table_S9.csv",row.names = FALSE)
+write.csv(tableS10,"Results/supplementary_info/supplementary_tables/table_S10.csv",row.names = FALSE)
+write.csv(tableS10,"Results/supplementary_info/supplementary_tables/table_S11.csv",row.names = FALSE)
