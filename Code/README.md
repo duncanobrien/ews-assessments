@@ -12,7 +12,7 @@
 
 [*bayesian_success_models.R*](bayesian_success_models.R) - fit binomial models to EWS success rates and estimate probabilities of correct classification. The saved models can be found in the [model folder](https://github.com/duncanobrien/ews-assessments/tree/main/Results/ews_models).
 
-[*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FigureS1.R*](FigureS1.R), [*FiguresS2_10.R*](FiguresS2_10.R),[*TablesS1_5.R*](TablesS1_5.R) - generate the main figures available [here](https://github.com/duncanobrien/ews-assessments/tree/main/Figures), the [supplementary figures](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/model_diagnoses), and supplementary tables [here](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/supplementary_tables).
+[*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FigureS1.R*](FigureS1.R), [*FiguresS2_10.R*](FiguresS2_10.R),[*TablesS1_5.R*](TablesS1_5.R), [*TablesS6_11.R*](TablesS6_11.R) - generate the main figures available [here](https://github.com/duncanobrien/ews-assessments/tree/main/Figures), the [supplementary figures](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/model_diagnoses), and supplementary tables [here](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/supplementary_tables).
 
 ## Supporting functions
 [*threshold_gam.R*](threshold_gam.R) - collection of supporting functions to fit threshold generalised additive models.
