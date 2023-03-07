@@ -7,7 +7,13 @@ Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.
 ## Data Sources
 Lake Kinneret and Lake Kasumigaura plankton data are available on request from Dr Gideon Gal and Dr Shin-ichiro S. Matsuzaki respectively. 
 
-Lake Mendota, Monona, Washington, Windermere, and Zurich data can be sourced from:
+Loch Leven, Lake Mendota, Monona, Washington, Windermere, and Zurich data can be sourced from:
+
+*Loch Leven*:
+
+Carvalho L., Bailey-Watts A. E. & Kirika A. 2015. Loch Leven diatom counts 1968-2007. *NERC Environmental Information Data Centre*. (Dataset). https://doi.org/10.5285/de5ca6cc-02e9-42bc-a39e-80ec8acbffba.
+
+Gunn, I.D.M., George D.G., Johnson D., Jones D.H. & May, L. 2015. Crustacean zooplankton data from Loch Leven, 1972-2007. *NERC Environmental Information Data Centre*. (Dataset). https://doi.org/10.5285/014f1c48-0838-49ca-b059-f084b13f4d5f.
 
 *Lake Mendota and Monona*: 
 
