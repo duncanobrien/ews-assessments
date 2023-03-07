@@ -1,6 +1,13 @@
+##########################################################################################
+## Preamble ##
+##########################################################################################
+
 require(dplyr)
 require(EWSmethods)
 require(foreach)
+require(zoo)
+require(stringr)
+
 load("Data/wrangled_genus_plank_data.Rdata") #data wrangled to genus level and trimmed prior to TGAM estimated transition dates  
 
 lapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
@@ -1345,8 +1352,6 @@ ewsnet_impulse <- read.csv(file = "/Users/ul20791/Desktop/ewsnet_impulse.csv")
 ################################################################################################################
 ## Combine ##
 ################################################################################################################
-
-#ewsnet_comp <- read.csv("/Users/ul20791/Downloads/ewsnet_comp.csv")[,-1]
 
 save(ewsnet_comp,exp_multicomp,roll_unicomp,roll_multicomp,perm_roll_unicomp,perm_roll_multicomp, file = "Results/ews_raw_data_a.RData")
 save(exp_uni_phyto,file = "Results/ews_raw_data_b.RData")
