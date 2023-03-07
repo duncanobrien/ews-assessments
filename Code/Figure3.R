@@ -68,5 +68,6 @@ ggsave(ggplot(dat_method_trials,aes(y = .variable, x = .value)) +
          facet_wrap(~res)+
          theme_bw()+
          theme(legend.position = "none",
-               panel.grid.minor = element_blank()),
+               panel.grid.minor = element_blank(),
+               panel.grid.major = element_blank()),
        filename = "Figures/figure_3.pdf",width = 5,height = 4)
