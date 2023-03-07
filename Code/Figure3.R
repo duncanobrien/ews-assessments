@@ -1,9 +1,11 @@
 ########################################################################################################################
 # Figure 3 #
 ########################################################################################################################
+
 require(tidyverse)
 require(patchwork)
 require(tidybayes)
+require(scales)
 
 ews_mod_method_mth <- readRDS(file = "Results/ews_models/computation_models/ews_mod_method_mth.rds")
 ews_mod_method_yr <- readRDS(file = "Results/ews_models/computation_models/ews_mod_method_yr.rds")
@@ -11,6 +13,7 @@ ews_mod_method_yr <- readRDS(file = "Results/ews_models/computation_models/ews_m
 ############ 
 #Extract posterior draws
 ############ 
+
 dat_method_trials <-  ews_mod_method_mth |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_method_code", "", .variable)) |> 
@@ -40,6 +43,7 @@ dat_method_halfeye <- ews_mod_method_mth |>
 ############ 
 #Create figure
 ############ 
+
 #as the back convertion from log odds to probabilities is a sigmoidal function, add scaling function
 #to x axis to represent this. Causes skew of posterior probability distributions on plot
 labels <- c(-4,round(brms::logit_scaled(c(0.25,0.5,0.75)),1),4) #ensure breaks @ 0.25 probability intervals

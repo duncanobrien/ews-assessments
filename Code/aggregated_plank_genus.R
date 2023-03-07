@@ -1,3 +1,7 @@
+##########################################################################################
+## Preamble ##
+##########################################################################################
+
 require(Matrix)
 require(tidyverse)
 
@@ -484,8 +488,7 @@ wash_mth_dat <- plank_env.washmthdata |>
 ################################################################################################################
 ## Save out ##
 ################################################################################################################
+
 save(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,wind_yr_dat,wash_yr_dat,leve_yr_dat,UZ_yr_dat,mon_yr_dat,
      kin_mth_dat,kas_mth_dat,LZ_mth_dat,mad_mth_dat,wind_mth_dat,wash_mth_dat,leve_mth_dat,UZ_mth_dat,mon_mth_dat,
     file =  "Data/wrangled_genus_plank_data.Rdata" )
-
-load("Data/wrangled_genus_plank_data.Rdata")

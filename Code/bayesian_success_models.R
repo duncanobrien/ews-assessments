@@ -1,6 +1,7 @@
 ##########################################################################################
 # Preamble
 ##########################################################################################
+
 require(Matrix)
 require(tidybayes)
 require(ggplot2)
@@ -242,6 +243,7 @@ wrmup <- 0.1*its
 ##########################################################################################
 # Compare Detrend/Deseason Methods
 ##########################################################################################
+
 ews_mod_detrend_mth_uni_roll <- brms::brm(brms::bf(total_success | trials(offset) ~ combo_code +  (1|lake/outcome)), 
                                      data = computation_data[computation_data$res == "Monthly" & grepl("univariate_rolling",computation_data$method_code)  & computation_data$lake %in% c("Kinneret", "Kasumigaura", "Monona", "Washington"),] |>
                                        mutate(combo_code = relevel(factor(paste(method_code,detrend_meth,deseason_meth,sep = "_")), ref = "univariate_rolling_none_none"))
@@ -637,6 +639,7 @@ metric_true_plot <- ggplot(dat_metric_true_trials |>
 ##########################################################################################
 # Compare Metrics' False Negative Rate
 ##########################################################################################
+
 ews_mod_metric_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ metric.code - 1 + (1|lake/method_code) ), 
                                      data = rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "gaussian" & deseason_meth == "average" & method_code != "univariate_ML" & outcome == "no.trans"),
                                                   subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "none" & method_code == "univariate_ML" & outcome == "no.trans")),
@@ -867,6 +870,7 @@ ind_true_plot3 <- ggplot(data = dat_ind_true_trials |>
 ##########################################################################################
 # Compare Indicators' False Negative Rate
 ##########################################################################################
+
 ews_mod_ind_mth_false <- brms::brm(brms::bf(total_success | trials(offset) ~ indicator - 1 + (1|lake/method_code) ), 
                                       data =  rbind(subset(metric_data, res  == "Monthly" & detrend_meth == "linear" & deseason_meth == "stl" & method_code == "univariate_rolling" & outcome == "no.trans"),
                                                     subset(metric_data, res  == "Monthly" & detrend_meth == "none" & deseason_meth == "decompose" & method_code == "univariate_expanding" & outcome == "no.trans"),
@@ -1106,4 +1110,3 @@ ggplot(subset(dat_metric_lake_trials,.width == 0.95),
   theme_bw()+
   theme(legend.position = "none",
         panel.grid.minor = element_blank())
-

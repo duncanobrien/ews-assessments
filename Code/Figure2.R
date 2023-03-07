@@ -1,6 +1,7 @@
 ########################################################################################################################
-# Figure 1 #
+# Figure 2 #
 ########################################################################################################################
+
 require(tidyverse)
 require(foreach)
 
@@ -17,6 +18,7 @@ source("Code/threshold_gam.R")
 ############ 
 #Prepare plankton data
 ############ 
+
 #for Lake Kinneret and Windermere, find total plankton density per year across trophic levels and create environmental PCA
 state.kin.dat <- data.frame("lake" = "Kinneret",
                             "tot_density" =scale(rowSums(scale(log1p(plank_env.data.yr[5:46,c(2,4:77)])))),
@@ -40,6 +42,7 @@ state.wind.dat <- data.frame("lake" = "Windermere",
 ############ 
 #Fit temporal TGAMs
 ############ 
+
 lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.wind.dat), 
                                   .combine = "rbind") %do% {
                                     
@@ -74,6 +77,7 @@ ss_time_plot_dat1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_de
 ############ 
 #Fit environmental TGAMs
 ############ 
+
 lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.wind.dat), 
                                      .combine = "rbind") %do% {
                                        
@@ -107,6 +111,7 @@ ss_plot_dat1 <- subset(lake_state_space, metric %in% c("phyto_density","zoo_dens
 ############ 
 #Create figure
 ############ 
+
 fig1_plot_dat <- rbind(ss_plot_dat1 |>
                          pivot_longer(env,names_to = "var_metric",values_to = "var.value") |>
                          mutate(var.value = var.value/2), #shrink for plotting purposes
@@ -155,4 +160,3 @@ fig1 <- ggplot(data = fig1_plot_dat, aes(x=var.value,y=metric.val)) +
 ggplot2::ggsave("Figures/figure2.png",
                 fig1,
                 width = 6,height=6.5,dpi=200)
-

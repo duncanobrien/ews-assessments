@@ -1,6 +1,7 @@
 #############################################################################
 # Preamble
 #############################################################################
+
 require(tidyverse)
 require(foreach)
 require(patchwork)
@@ -127,6 +128,7 @@ state.wash.dat <- data.frame("lake" = "Washington",
 #############################################################################
 #Perform State Space Fitting - Environmentals
 #############################################################################
+
 lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
                                                 state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
                          .combine = "rbind") %do% {
@@ -317,6 +319,7 @@ p_temporal <- ggplot(data = ss_time_plot_dat, aes(x=date,y=metric.val)) +
 #############################################################################
 #TGAM Figure 1
 #############################################################################
+
 lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
                                            state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
                                   .combine = "rbind") %do% {
@@ -440,6 +443,7 @@ p_temporal1 +
 #############################################################################
 #TGAM Figure Supp 1
 #############################################################################
+
 ss_time_plot_datS1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density")) |>
   mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
 
@@ -505,6 +509,7 @@ ggplot2::ggsave("/Users/ul20791/Desktop/Academia/Papers/OBrien_et_al_PlankEWS/la
 #############################################################################
 #Compare State Spaces
 #############################################################################
+
 state_transition_dates <- subset(lake_state_space,transition == "trans") |>
   rename(state_date = thresh.var)
 temporal_transition_dates <- subset(lake_temporal,transition == "trans") |>
@@ -528,4 +533,3 @@ ggplot2::ggsave("Figures/figure_S1.pdf",
                          p_env +  ggtitle("b) state space"),
                          common.legend = T,ncol=1,nrow=2,legend = "right")
        ,width = 18,height=10,dpi=144)
-

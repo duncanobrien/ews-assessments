@@ -1,6 +1,7 @@
 ########################################################################################################################
 # Figure S1 #
 ########################################################################################################################
+
 require(tidyverse)
 require(foreach)
 require(patchwork)
@@ -126,6 +127,7 @@ state.wash.dat <- data.frame("lake" = "Washington",
 ############ 
 #Fit temporal TGAMs
 ############ 
+
 lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
                                               state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
                                      .combine = "rbind") %do% {
@@ -161,6 +163,7 @@ ss_plot_dat <- subset(lake_state_space, metric %in% c("phyto_density","zoo_densi
 ############ 
 #Fit environmental TGAMs
 ############ 
+
 lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
                                            state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
                                   .combine = "rbind") %do% {
@@ -195,6 +198,7 @@ ss_time_plot_dat <- subset(lake_temporal, metric %in% c("phyto_density","zoo_den
 ############ 
 #Create figureS1
 ############ 
+
 ss_time_plot_datS1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density")) |>
   mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
 

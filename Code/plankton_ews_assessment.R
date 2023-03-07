@@ -364,6 +364,7 @@ roll_multicomp <- rbind(roll_multi_phyto,roll_multi_zoo)
 ################################################################################################################
 ## Permuted Multivariate EWS Assessment Rolling ##
 ################################################################################################################
+
 phyto_ls <- list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr_dat[,1:45],mad_yr_dat[,1:32],
                  wind_yr_dat[,1:18],wash_yr_dat[,1:7],leve_yr_dat[,1:4],UZ_yr_dat[,1:59],mon_yr_dat[,1:45],
                  kin_mth_dat[,1:14],kas_mth_dat[,1:25],LZ_mth_dat[,1:36],mad_mth_dat[,1:17],
@@ -831,6 +832,7 @@ roll_unicomp <- rbind(roll_uni_phyto,roll_uni_zoo)
 ################################################################################################################
 ## Permuted Univariate EWS Assessment Rolling ##
 ################################################################################################################
+
 phyto_ls <- list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_yr_dat[,1:45],mad_yr_dat[,1:32],
                  wind_yr_dat[,1:18],wash_yr_dat[,1:7],leve_yr_dat[,1:4],UZ_yr_dat[,1:59],mon_yr_dat[,1:45],
                  kin_mth_dat[,1:14],kas_mth_dat[,1:25],LZ_mth_dat[,1:36],mad_mth_dat[,1:17],
@@ -998,6 +1000,7 @@ perm_roll_unicomp <- rbind(perm_roll_uni_phyto,perm_roll_uni_zoo)
 ################################################################################################################
 ## EWSNet ##
 ################################################################################################################
+
 EWSmethods::ewsnet_init("EWSNET_env", auto=T)
 EWSmethods::ewsnet_reset(auto=T)
 
@@ -1174,6 +1177,7 @@ ewsnet_comp <- read.csv(file = "/Users/ul20791/Desktop/ewsnet_comp.csv")
 ################################################################################################################
 ## EWSNet Impulse ##
 ################################################################################################################
+
 EWSmethods::ewsnet_init("EWSNET_env", auto=T)
 source("Code/ewsnet_predict_impulse.R")
 
@@ -1359,4 +1363,3 @@ save(exp_uni_zoo,file = "Results/ews_raw_data_c.RData")
 save(ewsnet_impulse,file = "Results/ews_raw_data_d.RData")
 
 save(ewsnet_comp,ewsnet_impulse,file = "Results/ews_raw_data_ewsnet.RData")
-

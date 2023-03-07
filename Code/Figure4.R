@@ -1,9 +1,11 @@
 ########################################################################################################################
 # Figure 4 #
 ########################################################################################################################
+
 require(tidyverse)
 require(patchwork)
 require(tidybayes)
+require(scales)
 
 ews_mod_ind_mth_true <- readRDS(file = "Results/ews_models/indicator_models/ews_mod_ind_mth_true.rds")
 ews_mod_ind_yr_true <- readRDS(file = "Results/ews_models/indicator_models/ews_mod_ind_yr_true.rds")
@@ -29,6 +31,7 @@ inv_logit_perc <- scales::trans_new("inv_logit_perc",
 ############ 
 #Extract posterior draws
 ############ 
+
 dat_ind_true_trials <-  ews_mod_ind_mth_true |>
   tidybayes::gather_draws(`b.*`,regex = T) |>
   mutate(.variable = gsub("b_indicator", "", .variable)) |> 
@@ -95,6 +98,7 @@ dat_ind_false_halfeye <- ews_mod_ind_mth_false |>
 ############ 
 #Create individual panels
 ############ 
+
 ind_true_plot <- ggplot(data = dat_ind_true_trials |>   
                            mutate(.variable = sub("_.*", "",.variable),
                                   method_code = ifelse(method_code == "ML","EWSNet",method_code),
@@ -165,6 +169,7 @@ ind_false_plot <- ggplot(data = dat_ind_false_trials |>
 ############ 
 #Create figure
 ############ 
+
 ggsave(ind_true_plot +
          ind_false_plot +
          patchwork::plot_layout(guides = 'collect') + 
