@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Supplementary Tables #
+# Supplementary Tables 1 - 5 #
 ########################################################################################################################
 
 require(brms)
@@ -75,4 +75,3 @@ write.csv(tableS2,"Results/supplementary_info/supplementary_tables/table_S2.csv"
 write.csv(tableS3,"Results/supplementary_info/supplementary_tables/table_S3.csv")
 write.csv(tableS4,"Results/supplementary_info/supplementary_tables/table_S4.csv")
 write.csv(tableS5,"Results/supplementary_info/supplementary_tables/table_S5.csv")
-
