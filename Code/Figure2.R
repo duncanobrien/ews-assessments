@@ -4,6 +4,7 @@
 
 require(tidyverse)
 require(foreach)
+require(ggh4x)
 
 source("Data/kinneret_plankton_data.R") #raw data not provided. See references in Data Availability statement and repository README
 source("Data/kinneret_environmental_data.R")
@@ -43,7 +44,7 @@ state.wind.dat <- data.frame("lake" = "Windermere",
 #Fit temporal TGAMs
 ############ 
 
-lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.wind.dat), 
+lake_temporal <- foreach::foreach(j = list(state.kin.dat,state.wind.dat), 
                                   .combine = "rbind") %do% {
                                     
                                     lapply(c("tot_density","phyto_density","zoo_density","community"), 
@@ -78,7 +79,7 @@ ss_time_plot_dat1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_de
 #Fit environmental TGAMs
 ############ 
 
-lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.wind.dat), 
+lake_state_space <- foreach::foreach(j = list(state.kin.dat,state.wind.dat), 
                                      .combine = "rbind") %do% {
                                        
                                        lapply(c("tot_density","phyto_density","zoo_density","community"), 

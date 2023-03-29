@@ -47,7 +47,6 @@ state.kin.dat <- data.frame("lake" = "Kinneret",
                             "community" = prcomp(scale(plank_env.data.yr[5:46,c(2,4:77)]))$x[,1],
                             "env" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,1],
                             "env2" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,2],
-                            "env2" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,2],
                             "phyto_density" = scale(log1p(rowSums(plank_env.data.yr[5:46,c(2,4:46)]))),
                             "zoo_density" =scale(log1p(rowSums(plank_env.data.yr[5:46,c(47:77)]))),
                             "date" = as.numeric(plank_env.data.yr$Date[5:46])) #unable to use first 4 years due to missing P_ort data
@@ -125,7 +124,7 @@ state.wash.dat <- data.frame("lake" = "Washington",
                              "date" = as.numeric(plank_env.washyrdata$date)) 
 
 ############ 
-#Fit temporal TGAMs
+#Fit environmental TGAMs
 ############ 
 
 lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
@@ -159,9 +158,8 @@ lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.
 
 ss_plot_dat <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density"))
 
-
 ############ 
-#Fit environmental TGAMs
+#Fit temporal TGAMs
 ############ 
 
 lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
