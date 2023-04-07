@@ -1,6 +1,6 @@
 # ews-assessments
 
-Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Matsuzaki S.S., Dutta P.S. & Clements C.F. 2023. Modern early warning signals are ineffective in empirical ecological data.
+Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Matsuzaki S.S., Dutta P.S., May L. & Clements C.F. 2023. Early warning signals are hampered by a lack of critical transitions in empirical lake data.
 
 ## Graphical Abstract
 
