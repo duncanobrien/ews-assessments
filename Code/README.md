@@ -17,8 +17,6 @@
 ## Supporting functions
 [*threshold_gam.R*](threshold_gam.R) - collection of supporting functions to fit threshold generalised additive models.
 
-[*perm_rollEWS_fn.R*](perm_rollEWS_fn.R) - a modfication of the `uniEWS(method = "rolling")` and `multiEWS(method = "rolling")` functions from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) which performs permutations to assess the significance of rolling EWSs.
-
 [*ewsnet_predict_impulse.R*](ewsnet_predict_impulse.R) - a modfication of the `ewsnet_predict()` function from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) to use the Impulse version of the EWSNet machine learning model. These weights are provided in this [repository](https://github.com/duncanobrien/ews-assessments/tree/main/python/weights/Pretrained).
 
 [*extract_ews_pred_fn.R*](extract_ews_pred_fn.R) - function to extract the prediction made by each EWS indicator for each EWS computation method.
