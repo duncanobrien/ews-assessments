@@ -73,14 +73,14 @@ exp_multi_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ
                                            
                                            out.det <- EWSmethods::multiEWS(sub_dat,
                                                                            metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
-                                                                           method = "expanding",ggplotIt = F,
-                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))
+                                                                           method = "expanding",
+                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
                                            
                                            out.undet <- EWSmethods::multiEWS(sub_dat,
                                                                              metrics = c("eigenMAF", "mafAR", "mafSD",
                                                                                          "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                             method = "expanding",ggplotIt = F,
-                                                                             burn_in  = ceiling(dim(sub_dat)[1]*0.50))
+                                                                             method = "expanding",
+                                                                             burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
                                            
                                            return(data.frame(rbind(out.det$raw,out.undet$raw)))
                                            
@@ -152,14 +152,14 @@ exp_multi_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,
                                          
                                          out.det <- EWSmethods::multiEWS(sub_dat,
                                                                          metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
-                                                                         method = "expanding",ggplotIt = F,
-                                                                         burn_in  = ceiling(dim(sub_dat)[1]*0.50))
+                                                                         method = "expanding",
+                                                                         burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
                                          
                                          out.undet <- EWSmethods::multiEWS(sub_dat,
                                                                            metrics = c("eigenMAF", "mafAR", "mafSD",
                                                                                        "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                           method = "expanding",ggplotIt = F,
-                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))
+                                                                           method = "expanding",
+                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
                                          
                                          return(data.frame(rbind(out.det$raw,out.undet$raw)))
                                          
@@ -236,14 +236,14 @@ roll_multi_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],L
                                             }
                                             out.det <- EWSmethods::multiEWS(sub_dat,
                                                                             metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
-                                                                            method = "rolling",ggplotIt = F,
-                                                                            winsize = 50)
+                                                                            method = "rolling",
+                                                                            winsize = 50)$EWS
                                             
                                             out.undet <- EWSmethods::multiEWS(sub_dat,
                                                                               metrics = c("eigenMAF", "mafAR", "mafSD",
                                                                                           "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                              method = "rolling",ggplotIt = F,
-                                                                              winsize = 50)
+                                                                              method = "rolling",
+                                                                              winsize = 50)$EWS
                                             
                                             return(data.frame(cbind(out.det$cor,out.undet$cor)))
                                             
@@ -315,14 +315,14 @@ roll_multi_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1
                                           
                                           out.det <- EWSmethods::multiEWS(sub_dat,
                                                                           metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
-                                                                          method = "rolling",ggplotIt = F,
-                                                                          winsize = 50)
+                                                                          method = "rolling",
+                                                                          winsize = 50)$EWS
                                           
                                           out.undet <- EWSmethods::multiEWS(sub_dat,
                                                                             metrics = c("eigenMAF", "mafAR", "mafSD",
                                                                                         "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                            method = "rolling",ggplotIt = F,
-                                                                            winsize = 50)
+                                                                            method = "rolling",
+                                                                            winsize = 50)$EWS
                                           
                                           return(data.frame(cbind(out.det$cor,out.undet$cor)))
                                           
@@ -405,12 +405,19 @@ perm_roll_multi_phyto <- lapply(seq_along(phyto_ls),
                                         }
                                       }
                                       print(paste(names(phyto_ls)[i],j,k,collapse = "_"))
+                                      # out.det <- perm_rollEWS(data = sub_dat,
+                                      #                         metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
+                                      #                                     "eigenMAF", "mafAR", "mafSD",
+                                      #                                     "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
+                                      #                         perm.meth = "replacement",iter=500,
+                                      #                         winsize = 50,variate = "multi",mc.cores=5)
+                                      
                                       out.det <- perm_rollEWS(data = sub_dat,
                                                               metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
                                                                           "eigenMAF", "mafAR", "mafSD",
                                                                           "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                              perm.meth = "replacement",iter=500,
-                                                              winsize = 50,variate = "multi",mc.cores=5)
+                                                              perm.meth = "sample",iter=500,
+                                                              winsize = 50,variate = "multi")$EWS
                                       
                                       # out.undet <- perm_rollEWS(sub_dat,metrics = c("eigenMAF", "mafAR", "mafSD",
                                       #                                               "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
@@ -491,13 +498,19 @@ perm_roll_multi_zoo <- lapply(seq_along(zoo_ls),
                                     }
                                     
                                     print(paste(names(zoo_ls)[i],j,k,collapse = "_"))
+                                    # out.det <- perm_rollEWS(data = sub_dat,
+                                    #                         metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
+                                    #                                     "eigenMAF", "mafAR", "mafSD",
+                                    #                                     "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
+                                    #                         perm.meth = "replacement",iter=500,
+                                    #                         winsize = 50,variate = "multi")
+                                    # 
                                     out.det <- perm_rollEWS(data = sub_dat,
                                                             metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
                                                                         "eigenMAF", "mafAR", "mafSD",
                                                                         "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                            perm.meth = "replacement",iter=500,
-                                                            winsize = 50,variate = "multi",mc.cores=5)
-                                    
+                                                            perm.meth = "sample",iter=500,
+                                                            winsize = 50,variate = "multi")$EWS
                                     
                                     return(data.frame(out.det$cor))
                                     
@@ -574,8 +587,8 @@ exp_uni_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_y
                                          
                                          foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                            
-                                           out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",ggplotIt = F,
-                                                                     burn_in = ceiling(dim(x)[1]*0.50))
+                                           out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",
+                                                                     burn_in = ceiling(dim(x)[1]*0.50))$EWS
                                            
                                            data.frame(cbind(data_source = paste(i),
                                                             out))
@@ -646,8 +659,8 @@ exp_uni_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26
                                        
                                        foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                          
-                                         out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",ggplotIt = F,
-                                                                   burn_in = ceiling(dim(x)[1]*0.50))
+                                         out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",
+                                                                   burn_in = ceiling(dim(x)[1]*0.50))$EWS
                                          
                                          data.frame(cbind(data_source = paste(i),
                                                           out))
@@ -715,8 +728,8 @@ roll_uni_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_
                                           
                                           foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                             
-                                            out <- EWSmethods::uniEWS(data =x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "rolling",ggplotIt = F,
-                                                                      winsize = 50)
+                                            out <- EWSmethods::uniEWS(data =x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "rolling",
+                                                                      winsize = 50)$EWS
                                             
                                             data.frame(cbind(data_source = paste(i),
                                                              out$cor))
@@ -788,8 +801,8 @@ roll_uni_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,2
                                         
                                         foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                           
-                                          out <- EWSmethods::uniEWS(data =x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "rolling",ggplotIt = F,
-                                                                    winsize = 50)
+                                          out <- EWSmethods::uniEWS(data =x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "rolling",
+                                                                    winsize = 50)$EWS
                                           
                                           data.frame(cbind(data_source = paste(i),
                                                            out$cor))
@@ -874,9 +887,13 @@ perm_roll_uni_phyto <- lapply(seq_along(phyto_ls),
                                     
                                     foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                       
-                                      out <-  perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
-                                                           winsize = 50, perm.meth = "replacement", variate = "uni",
-                                                           iter = 500,mc.cores=5)   
+                                      # out <-  perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
+                                      #                      winsize = 50, perm.meth = "replacement", variate = "uni",
+                                      #                      iter = 500,mc.cores=5)   
+                                      
+                                      out <-  EWSmethods::perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
+                                                           winsize = 50, perm.meth = "sample", variate = "uni",
+                                                           iter = 500)$EWS   
                                       
                                       data.frame(cbind(data_source = paste(i),
                                                        out$cor))
@@ -955,9 +972,13 @@ perm_roll_uni_zoo <- lapply(seq_along(zoo_ls),
                                   
                                   foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                     
+                                    # out <-  perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
+                                    #                      winsize = 50, perm.meth = "replacement", variate = "uni",
+                                    #                      iter = 500,mc.cores=5) 
+                                    
                                     out <-  perm_rollEWS(data = x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),
-                                                         winsize = 50, perm.meth = "replacement", variate = "uni",
-                                                         iter = 500,mc.cores=5)   
+                                                         winsize = 50, perm.meth = "sample", variate = "uni",
+                                                         iter = 500)$EWS 
                                     
                                     data.frame(cbind(data_source = paste(i),
                                                      out$cor))

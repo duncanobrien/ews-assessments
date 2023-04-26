@@ -38,7 +38,6 @@ rm(list = ls()[!ls() %in% c("plank_env.data.mth","plank_env.data.yr","plank_env.
 
 source("Code/threshold_gam.R")
 
-
 #############################################################################
 #Prepare Lake Data
 #############################################################################
@@ -47,7 +46,6 @@ state.kin.dat <- data.frame("lake" = "Kinneret",
                             "tot_density" =scale(rowSums(scale(log1p(plank_env.data.yr[5:46,c(2,4:77)])))),
                             "community" = prcomp(scale(plank_env.data.yr[5:46,c(2,4:77)]))$x[,1],
                             "env" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,1],
-                            "env2" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,2],
                             "env2" = prcomp(scale(plank_env.data.yr[5:46,c("Temp","Nitrate","P_ort")]))$x[,2],
                             "phyto_density" = scale(log1p(rowSums(plank_env.data.yr[5:46,c(2,4:46)]))),
                             "zoo_density" =scale(log1p(rowSums(plank_env.data.yr[5:46,c(47:77)]))),

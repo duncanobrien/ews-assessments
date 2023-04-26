@@ -178,7 +178,7 @@ all_ews_data <- as.data.table(ewsnet_diff_df) %>%
 
 computation_data <- all_ews_data %>%
   .[,offset := length(unique(data_source)), by =c("method_code","lake","res","troph_level") ] %>% #trials in terms of assessed time series
-  .[,offset2 := length(unique(data_source))*length(unique(metric.code)), by =c("method_code","lake","res""troph_level")] %>% #trials in terms of assessed time series AND metrics 
+  .[,offset2 := length(unique(data_source))*length(unique(metric.code)), by =c("method_code","lake","res","troph_level")] %>% #trials in terms of assessed time series AND metrics 
   .[,.(total_success = sum(outcome),
        offset = unique(offset2),
        #ts_length = unique(ts_length),
