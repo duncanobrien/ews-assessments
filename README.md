@@ -6,9 +6,10 @@ Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.
 ## Graphical Abstract
 
 ## Data Sources
-Lake Kinneret and Lake Kasumigaura plankton data are available on request from Dr Gideon Gal and Dr Shin-ichiro S. Matsuzaki respectively. **Please do not use those data without permission**
+Lake Kinneret and Lake Kasumigaura plankton data are available on request from Dr Gideon Gal and Dr Shin-ichiro S. Matsuzaki respectively. 
+> :warning: **Please do not use those data without permission**
 
-Loch Leven, Lake Mendota, Monona, Washington, Windermere, and Zurich data can be sourced from:
+Public domain Loch Leven, Lake Mendota, Monona, Washington, Windermere, and Zurich data can be sourced from:
 
 *Loch Leven*:
 
