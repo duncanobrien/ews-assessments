@@ -12,11 +12,14 @@
 
 [*bayesian_success_models.R*](bayesian_success_models.R) - fit binomial models to EWS success rates and estimate probabilities of correct classification. The saved models can be found in the [model folder](https://github.com/duncanobrien/ews-assessments/tree/main/Results/ews_models).
 
-[*Figure2.R*](Figure2.R), [*Figure3.R*](Figure3.R), [*Figure4.R*](Figure4.R), [*FigureS1.R*](FigureS1.R), [*FiguresS2_10.R*](FiguresS2_10.R),[*TablesS1_5.R*](TablesS1_5.R), [*TablesS6_11.R*](TablesS6_11.R) - generate the main figures available [here](https://github.com/duncanobrien/ews-assessments/tree/main/Figures), the [supplementary figures](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/model_diagnoses), and supplementary tables [here](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/supplementary_tables).
+[*Figure4.R*](Figure4.R), [*Figure5.R*](Figure5.R), [*Figure6.R*](Figure6.R), [*FigureS1.R*](FigureS1.R), [*FiguresS2_10.R*](FiguresS2_10.R),[*TablesS3_7.R*](TablesS3_7.R), [*TablesS8_13.R*](TablesS8_13.R) - generate the main figures available [here](https://github.com/duncanobrien/ews-assessments/tree/main/Figures), the [supplementary figures](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/model_diagnoses), and supplementary tables [here](https://github.com/duncanobrien/ews-assessments/tree/main/Results/supplementary_info/supplementary_tables).
 
 ## Supporting functions
 [*threshold_gam.R*](threshold_gam.R) - collection of supporting functions to fit threshold generalised additive models.
 
-[*ewsnet_predict_impulse.R*](ewsnet_predict_impulse.R) - a modfication of the `ewsnet_predict()` function from the [EWSmethods R package](https://www.authorea.com/doi/full/10.22541/au.166801190.00303336) to use the Impulse version of the EWSNet machine learning model. These weights are provided in this [repository](https://github.com/duncanobrien/ews-assessments/tree/main/python/weights/Pretrained).
+[*ewsnet_predict_impulse.R*](ewsnet_predict_impulse.R) - a modification of the `ewsnet_predict()` function from the [EWSmethods R package](https://doi.org/10.1111/ecog.06674) to use the Impulse version of the EWSNet machine learning model. These weights are provided in this [repository](https://github.com/duncanobrien/ews-assessments/tree/main/python/weights/Pretrained).
 
 [*extract_ews_pred_fn.R*](extract_ews_pred_fn.R) - function to extract the prediction made by each EWS indicator for each EWS computation method.
+
+## Supplementary code
+The [supplementary_code folder](https://github.com/duncanobrien/ews-assessments/tree/main/Code/supplementary_code) contains additional scripts to support statements made during the review process regarding classification of regime shifts in monthly time series and the use of Receiver Operator Curves (ROC) for assessing EWS ability.

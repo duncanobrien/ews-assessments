@@ -33,8 +33,15 @@ find_threshold <- function(data, formula, thresh.var, expl.var = NULL , thresh.r
     formula.tmp <- update.formula(formula, paste("~ . + threshold + s(",expl.var,", bs='tp',k=",k,",by=threshold) -1")) 
   }
   
+  round_digits <- data[[thresh.var]][2]
+  if (abs(round_digits - round(round_digits)) > .Machine$double.eps^0.5) {
+    digs <- nchar(strsplit(sub('0+$', '', as.character(round_digits)), ".", fixed = TRUE)[[1]][[2]])
+  }else{
+    digs <-0
+  } #for non-integer sequences, digits need to be specified for quartile rounding
+  
   thresh.values<-round(seq(quantile(data[[thresh.var]],thresh.range[1]),
-                     quantile(data[[thresh.var]],thresh.range[2]),by=by))#create range of threshold dates (sequence increasing from 20% to 80% of thresh.var length)
+                     quantile(data[[thresh.var]],thresh.range[2]),by=by),digits = digs)#create range of threshold dates (sequence increasing from 20% to 80% of thresh.var length)
   
   gcv.thresh<-thresh.values*NA 
 

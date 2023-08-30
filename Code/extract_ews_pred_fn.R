@@ -115,7 +115,7 @@ extract_ews_pred <- function(ews.data, sensitivity, outcome, method,surrogate = 
         data.table::melt(.,measure.vars = colnames(out)[!grepl("data_source|res|lake|method|computation|perm|troph_level", colnames(out))],
                          variable.name = "metric.code", value.name = "metric.score") %>% # pivot EWS indicator correlations longer
         data.table::dcast(., data_source + lake + res + metric.code + method + computation + troph_level~ perm, value.var = "metric.score") %>% # and pivot back wider in to observed and permuted values
-        .[,threshold.crossed := ifelse(obs > 0 & perm >= sensitivity,1, 0), 
+        .[,threshold.crossed := ifelse(obs > 0 & (1-perm) <= sensitivity,1, 0), 
           by = c("data_source","perm","metric.code","lake","res","troph_level")] %>%
         .[,prediction := ifelse(threshold.crossed == 0 & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "no.trans","match",
                                 ifelse(threshold.crossed == 0 & outcome[outcome[,1] %in% gsub("_ ","",paste(lake,res,troph_level,sep = "_")),2] == "trans", "miss",   

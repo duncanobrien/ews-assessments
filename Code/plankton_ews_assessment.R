@@ -34,6 +34,8 @@ lapply(list(kin_yr_dat,kas_yr_dat,LZ_yr_dat,mad_yr_dat,
 rm(list = ls()[!ls() %in% c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
                             "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat")])
 
+source("Code/multiAR.R")
+
 ################################################################################################################
 ## Multivariate EWS Assessment Expanding ##
 ################################################################################################################
@@ -72,17 +74,14 @@ exp_multi_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ
                                            }
                                            
                                            out.det <- EWSmethods::multiEWS(sub_dat,
-                                                                           metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
+                                                                           metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
+                                                                                       "eigenMAF", "mafAR", "mafSD",
+                                                                                       "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
                                                                            method = "expanding",
-                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
-                                           
-                                           out.undet <- EWSmethods::multiEWS(sub_dat,
-                                                                             metrics = c("eigenMAF", "mafAR", "mafSD",
-                                                                                         "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                             method = "expanding",
-                                                                             burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
-                                           
-                                           return(data.frame(rbind(out.det$raw,out.undet$raw)))
+                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.5),
+                                                                           threshold = 2)$EWS
+
+                                           return(data.frame(rbind(out.det$raw)))
                                            
                                          } ) |>
                                            `names<-`(c("none","average","decompose","stl")) |>
@@ -151,17 +150,14 @@ exp_multi_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,
                                          }
                                          
                                          out.det <- EWSmethods::multiEWS(sub_dat,
-                                                                         metrics = c("meanAR", "maxAR", "meanSD", "maxSD"),
+                                                                         metrics = c("meanAR", "maxAR", "meanSD", "maxSD",
+                                                                                     "eigenMAF", "mafAR", "mafSD",
+                                                                                     "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
                                                                          method = "expanding",
-                                                                         burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
+                                                                         burn_in  = ceiling(dim(sub_dat)[1]*0.5),
+                                                                         threshold = 2)$EWS
                                          
-                                         out.undet <- EWSmethods::multiEWS(sub_dat,
-                                                                           metrics = c("eigenMAF", "mafAR", "mafSD",
-                                                                                       "pcaAR", "pcaSD", "eigenCOV", "maxCOV", "mutINFO"),
-                                                                           method = "expanding",
-                                                                           burn_in  = ceiling(dim(sub_dat)[1]*0.50))$EWS
-                                         
-                                         return(data.frame(rbind(out.det$raw,out.undet$raw)))
+                                         return(data.frame(out.det$raw))
                                          
                                        } ) |>
                                          `names<-`(c("none","average","decompose","stl")) |>
@@ -381,7 +377,7 @@ perm_roll_multi_phyto <- lapply(seq_along(phyto_ls),
                                     mean(x[,i] == min(x[,i])) <= 0.47
                                   })]
                                   
-                                  out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                  out <- pbmcapply::pbmclapply(c("none","linear","gaussian","loess"),function(j){
                                     
                                     if(j != "none"){
                                       sub_dat <- EWSmethods::detrend_ts(sub_dat,method = j,span=0.5)   
@@ -390,7 +386,7 @@ perm_roll_multi_phyto <- lapply(seq_along(phyto_ls),
                                       })
                                     }
                                     
-                                    out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                    out_inner <- pbmcapply::pbmclapply(c("none","average","decompose","stl"), function(k){
                                       
                                       if(k != "none"){
                                         
@@ -426,12 +422,12 @@ perm_roll_multi_phyto <- lapply(seq_along(phyto_ls),
                                       
                                       return(data.frame(out.det$cor))
                                       
-                                    } ) |>
+                                    },mc.cores = 3) |>
                                       `names<-`(c("none","average","decompose","stl")) |>
                                       data.table::rbindlist(idcol="deseason_meth")
                                     
                                     return(out_inner)
-                                  }) |>
+                                  },mc.cores = 3) |>
                                     `names<-`(c("none","linear","gaussian","loess")) |>
                                     data.table::rbindlist(idcol="detrend_meth")
                                   
@@ -474,7 +470,7 @@ perm_roll_multi_zoo <- lapply(seq_along(zoo_ls),
                                   mean(x[,i] == min(x[,i])) <= 0.47
                                 })]
                                 
-                                out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                out <- pbmcapply::pbmclapply(c("none","linear","gaussian","loess"),function(j){
                                   if(j != "none"){
                                     sub_dat <- EWSmethods::detrend_ts(sub_dat,method = j,span=0.5)   
                                     sub_dat[,-1] <- sapply(colnames(sub_dat)[-1],FUN = function(i){
@@ -482,7 +478,7 @@ perm_roll_multi_zoo <- lapply(seq_along(zoo_ls),
                                     })
                                   }
                                   
-                                  out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                  out_inner <- pbmcapply::pbmclapply(c("none","average","decompose","stl"), function(k){
                                     
                                     if(k != "none"){
                                       
@@ -514,12 +510,12 @@ perm_roll_multi_zoo <- lapply(seq_along(zoo_ls),
                                     
                                     return(data.frame(out.det$cor))
                                     
-                                  } ) |>
+                                  },mc.cores = 3) |>
                                     `names<-`(c("none","average","decompose","stl")) |>
                                     data.table::rbindlist(idcol="deseason_meth")
                                   
                                   return(out_inner)
-                                }) |>
+                                },mc.cores = 3) |>
                                   `names<-`(c("none","linear","gaussian","loess")) |>
                                   data.table::rbindlist(idcol="detrend_meth")
                                 
@@ -588,7 +584,8 @@ exp_uni_phyto <- pbapply::pblapply(list(kin_yr_dat[,1:14],kas_yr_dat[,1:25],LZ_y
                                          foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                            
                                            out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",
-                                                                     burn_in = ceiling(dim(x)[1]*0.50))$EWS
+                                                                     burn_in = ceiling(dim(x)[1]*0.5),
+                                                                     threshold = 2)$EWS
                                            
                                            data.frame(cbind(data_source = paste(i),
                                                             out))
@@ -660,7 +657,8 @@ exp_uni_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26
                                        foreach(i=colnames(x[,-1]), .combine='rbind',.verbose = F) %do%{
                                          
                                          out <- EWSmethods::uniEWS(x[,c(time_vec,i)],metrics = c("ar1","SD","skew"),method = "expanding",
-                                                                   burn_in = ceiling(dim(x)[1]*0.50))$EWS
+                                                                   burn_in = ceiling(dim(x)[1]*0.5),
+                                                                   threshold = 2)$EWS
                                          
                                          data.frame(cbind(data_source = paste(i),
                                                           out))
@@ -679,13 +677,22 @@ exp_uni_zoo <- pbapply::pblapply(list(kin_yr_dat[,c(1,15:32)],kas_yr_dat[,c(1,26
   `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
               "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
-  mutate(lake = "Kinneret",
-         res =  case_when(
-           grepl("yr", name) ~ "Yearly",
-           grepl("mth", name) ~ "Monthly"),
-         method = "univariate EWS",
-         computation = "expanding",
-         troph_level = "zooplankton") |>
+  mutate(lake = case_when(
+    grepl("kin", name) ~ "Kinneret",
+    grepl("kas", name) ~ "Kasumigaura",
+    grepl("LZ", name) ~ "Lower Zurich",
+    grepl("mad", name) ~ "Mendota",
+    grepl("wind", name) ~ "Windermere",
+    grepl("UZ", name) ~ "Upper Zurich",
+    grepl("mon", name) ~ "Monona",
+    grepl("leve", name) ~ "Loch Leven",
+    grepl("wash", name) ~ "Washington"),
+    res =  case_when(
+      grepl("yr", name) ~ "Yearly",
+      grepl("mth", name) ~ "Monthly"),
+    method = "univariate EWS",
+    computation = "expanding",
+    troph_level = "zooplankton") |>
   select(-name)
 
 exp_unicomp <- rbind(exp_uni_phyto,exp_uni_zoo)
@@ -858,7 +865,7 @@ perm_roll_uni_phyto <- lapply(seq_along(phyto_ls),
                                 
                                 x <- phyto_ls[[l]]
                                 
-                                out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                                out <- pbmcapply::pbmclapply(c("none","linear","gaussian","loess"),function(j){
                                   
                                   if(j != "none"){
                                     x <- EWSmethods::detrend_ts(x,method = j,span = 0.5) 
@@ -867,7 +874,7 @@ perm_roll_uni_phyto <- lapply(seq_along(phyto_ls),
                                     })
                                   }
                                   
-                                  out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                  out_inner <- pbmcapply::pbmclapply(c("none","average","decompose","stl"), function(k){
                                     
                                     if(k != "none"){
                                       
@@ -898,19 +905,19 @@ perm_roll_uni_phyto <- lapply(seq_along(phyto_ls),
                                       data.frame(cbind(data_source = paste(i),
                                                        out$cor))
                                     }
-                                  }) |>
+                                  },mc.cores = 3) |>
                                     `names<-`(c("none","average","decompose","stl")) |>
                                     data.table::rbindlist(idcol="deseason_meth")
                                   
                                   return(out_inner)
-                                }) |>
+                                },mc.cores = 3) |>
                                   `names<-`(c("none","linear","gaussian","loess")) |>
                                   data.table::rbindlist(idcol="detrend_meth")
                                 return(out)
                                 
                               }) |>
-  `names<-`(c("wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
-              "wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
+  `names<-`(c("kin_yr_dat","kas_yr_dat","LZ_yr_dat","mad_yr_dat","wind_yr_dat","wash_yr_dat","leve_yr_dat","UZ_yr_dat","mon_yr_dat",
+              "kin_mth_dat","kas_mth_dat","LZ_mth_dat","mad_mth_dat","wind_mth_dat","wash_mth_dat","leve_mth_dat","UZ_mth_dat","mon_mth_dat"))  |> 
   data.table::rbindlist(idcol="name") |> 
   mutate(lake = case_when(
     grepl("kin", name) ~ "Kinneret",
@@ -942,7 +949,7 @@ perm_roll_uni_zoo <- lapply(seq_along(zoo_ls),
                               
                               x <- zoo_ls[[l]]
                               
-                              out <- lapply(c("none","linear","gaussian","loess"),function(j){
+                              out <- pbmcapply::pbmclapply(c("none","linear","gaussian","loess"),function(j){
                                 
                                 if(j != "none"){
                                   x <- EWSmethods::detrend_ts(x,method = j,span = 0.5) 
@@ -951,7 +958,7 @@ perm_roll_uni_zoo <- lapply(seq_along(zoo_ls),
                                   })
                                 }
                                 
-                                out_inner <- lapply(c("none","average","decompose","stl"), function(k){
+                                out_inner <- pbmcapply::pbmclapply(c("none","average","decompose","stl"), function(k){
                                   
                                   if(k != "none"){
                                     
@@ -983,12 +990,12 @@ perm_roll_uni_zoo <- lapply(seq_along(zoo_ls),
                                     data.frame(cbind(data_source = paste(i),
                                                      out$cor))
                                   }
-                                }) |>
+                                },mc.cores = 3) |>
                                   `names<-`(c("none","average","decompose","stl")) |>
                                   data.table::rbindlist(idcol="deseason_meth")
                                 
                                 return(out_inner)
-                              }) |>
+                              },mc.cores = 3) |>
                                 `names<-`(c("none","linear","gaussian","loess")) |>
                                 data.table::rbindlist(idcol="detrend_meth")
                               return(out)

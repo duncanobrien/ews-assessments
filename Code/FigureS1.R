@@ -4,7 +4,9 @@
 
 require(tidyverse)
 require(foreach)
-require(patchwork)
+require(ggpubr)
+require(LaplacesDemon)
+require(mousetrap)
 
 source("Data/kinneret_plankton_data.R") #raw data not provided. See references in Data Availability statement and repository README
 source("Data/kinneret_environmental_data.R")
@@ -140,7 +142,7 @@ lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.
                                                                         cont_formula = formula(cont_formula, method = "REML"),
                                                                         thresh_formula =  formula(thresh_formula, method = "REML"),
                                                                         thresh.var = "date", expl.var = "env",
-                                                                        thresh.range = c(0.15,0.85), by = 1, k=3)
+                                                                        thresh.range = c(0.2,0.85), by = 1, k=3)
                                                 
                                                 best_gam <- predict_best_gam(object=dens_gam) %>%
                                                   dplyr::rename("metric.val" = i) 
@@ -155,8 +157,6 @@ lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.
                                                        lake = j$lake[1]
                                          )
                                      }
-
-ss_plot_dat <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density"))
 
 ############ 
 #Fit temporal TGAMs
@@ -191,17 +191,53 @@ lake_temporal <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.lev
                                       )
                                   }
 
-ss_time_plot_dat <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density"))
+############ 
+#Identify bi-modality
+############ 
+
+lake_bimod <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                                        state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
+                               .combine = "rbind") %do% {
+                                 
+                                 lapply(c("tot_density","phyto_density","zoo_density","community"),function(i){
+                                   
+                                   
+                                   return(data.frame("metric" = i,
+                                                     "is_bimodal" =  LaplacesDemon::is.bimodal(j[,i]),
+                                                     "modes" = LaplacesDemon::Modes(j[,i])$modes,
+                                                     "modality_coef" = mousetrap::bimodality_coefficient(j[,i]))) #Pfister et al., 2013
+                                 }) |>
+                                   data.table::rbindlist() |>
+                                   dplyr::mutate(lake = j$lake[1])
+                               }
+
+bimod_plot_datS1 <- rbind(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                          state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat) |>
+  dplyr::select(lake,phyto_density,zoo_density) |>
+  tidyr::pivot_longer(-lake,names_to = "metric",values_to = "metric.value") |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+
+bimod_modes <- subset(lake_bimod, metric %in% c("phyto_density","zoo_density")) |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton"))) |>
+  dplyr::group_by(metric) |>
+  dplyr::mutate(y = ifelse(metric == "Phytoplankton",c(0.525,0.5),c(0.725,0.7)),
+                modes = round(modes,digits = 2),
+                mode_sig = ifelse(modality_coef > 0.5, paste0(modes,"*"),paste0(modes)))
 
 ############ 
 #Create figureS1
 ############ 
 
 ss_time_plot_datS1 <- subset(lake_temporal, metric %in% c("phyto_density","zoo_density")) |>
-  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
 
 ss_plot_datS1 <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density")) |>
-  mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+ss_bimod_plot_datS1 <- dplyr::right_join(bimod_plot_datS1,bimod_modes,
+                                       relationship = "many-to-many") |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
 
 p_temporalS1 <- ggplot(data = ss_time_plot_datS1, aes(x=date,y=metric.val)) + 
   geom_point(aes(x=date, y = metric.val))+
@@ -251,10 +287,24 @@ p_envS1 <- ggplot(data = ss_plot_datS1, aes(x=env,y=metric.val)) +
         legend.position = "top",
         panel.border = element_rect(linewidth = 1,fill = "transparent"))
 
+p_bimodalS1 <- ggplot(ss_bimod_plot_datS1) +
+  geom_density(aes(y = metric.value)) +
+  geom_hline(aes(yintercept = modes),linetype = "dashed",colour = "black")+
+  geom_text(aes(y=modes+0.25,x=0.2,label = mode_sig),size = 5)+
+  facet_grid(metric~lake,scales = "free_x") +
+  xlab("Density") + ylab("Scaled metric score")+ 
+  theme_classic() +
+  theme(legend.text=element_text(size=12),
+        strip.background = element_rect(fill = "#D6D6D6"),
+        strip.placement.y = "outside",
+        legend.position = "top",
+        panel.border = element_rect(linewidth = 1,fill = "transparent"))
+
 
 ggplot2::ggsave("Figures/figure_S1.png",
                 ggpubr::ggarrange(p_temporalS1 + ggtitle("Time series"),
                                   p_envS1 +  ggtitle("State space"),
+                                  p_bimodalS1 +  ggtitle("Bimodality"),
                                   labels="AUTO",font.label = list(face="plain"),
-                                  common.legend = T,ncol=1,nrow=2,legend = "top")
-                ,width = 16,height=9,dpi=300)
+                                  common.legend = T,ncol=1,nrow=3,legend = "top")
+                ,width = 16,height=10,dpi=300)

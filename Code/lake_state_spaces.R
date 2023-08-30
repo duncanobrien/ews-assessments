@@ -315,6 +315,46 @@ p_temporal <- ggplot(data = ss_time_plot_dat, aes(x=date,y=metric.val)) +
 
 
 #############################################################################
+#Identify bi-modality
+#############################################################################
+require(LaplacesDemon)
+require(diptest)
+require(mousetrap)
+
+lake_bimod <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                                        state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
+                               .combine = "rbind") %do% {
+                                 
+                                 lapply(c("tot_density","phyto_density","zoo_density","community"),function(i){
+                                   
+                                   modes <- LaplacesDemon::Modes(j[,i])$modes
+                                   
+                                   return(data.frame("metric" = i,
+                                                     "is_bimodal" =  LaplacesDemon::is.bimodal(j[,i]),
+                                                     "mode1" = modes[1],
+                                                     "mode2" = ifelse(length(modes)==1,NA,modes[2]),
+                                                     "modality_coef" = mousetrap::bimodality_coefficient(j[,i]))) #Pfister et al., 2013
+                                 }) |>
+                                   data.table::rbindlist() |>
+                                   dplyr::mutate(lake = j$lake[1])
+                               }
+
+bimod_plot_datS1 <- rbind(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                          state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat) |>
+  dplyr::select(lake,phyto_density,zoo_density) |>
+  tidyr::pivot_longer(-lake,names_to = "metric",values_to = "metric.value") |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+
+bimod_modes <- subset(lake_bimod, metric %in% c("phyto_density","zoo_density")) |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton"))) |>
+  dplyr::group_by(metric) |>
+  dplyr::mutate(y = ifelse(metric == "Phytoplankton",c(0.525,0.5),c(0.725,0.7)),
+                mode1 = round(mode1,digits = 2),
+                mode2 = round(mode2,digits = 2),
+                mode_sig = ifelse(modality_coef > 0.5, paste0(modes,"*"),paste0(modes)))
+ 
+#############################################################################
 #TGAM Figure 1
 #############################################################################
 
@@ -379,19 +419,67 @@ lake_state_space <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.
                                                        lake = j$lake[1]
                                          )
                                      }
+
 ss_plot_dat1 <- subset(lake_state_space, metric %in% c("phyto_density","zoo_density") & 
                          lake %in% c("Kinneret","Windermere")) |>
   mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
 
+lake_bimod <- foreach::foreach(j = list(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                                        state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat), 
+                               .combine = "rbind") %do% {
+                                 
+                                 lapply(c("tot_density","phyto_density","zoo_density","community"),function(i){
+                                   
+                                   modes <- LaplacesDemon::Modes(j[,i])$modes
+                                   
+                                   return(data.frame("metric" = i,
+                                                     "is_bimodal" =  LaplacesDemon::is.bimodal(j[,i]),
+                                                     "mode1" = modes[1],
+                                                     "mode2" = ifelse(length(modes)==1,NA,modes[2]),
+                                                     "modality_coef" = mousetrap::bimodality_coefficient(j[,i])))
+                                   
+                                 }) |>
+                                   data.table::rbindlist() |>
+                                   dplyr::mutate(lake = j$lake[1])
+                               }
+
+bimod_plot_datS1 <- rbind(state.kas.dat,state.kin.dat,state.leve.dat,state.LZ.dat,
+                          state.mad.dat,state.mon.dat,state.UZ.dat,state.wash.dat,state.wind.dat) |>
+  dplyr::select(lake,phyto_density,zoo_density) |>
+  tidyr::pivot_longer(-lake,names_to = "metric",values_to = "metric.value") |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton")))
+
+bimod_modes <- subset(lake_bimod, metric %in% c("phyto_density","zoo_density")) |>
+  dplyr::mutate(metric = factor(metric, labels = c("Phytoplankton","Zooplankton"))) |>
+  dplyr::group_by(metric) |>
+  dplyr::mutate(y = ifelse(metric == "Phytoplankton",c(0.525,0.5),c(0.725,0.7)),
+                mode1 = round(mode1,digits = 2),
+                mode2 = round(mode2,digits = 2)) 
+
 fig1_plot_dat <- rbind(ss_plot_dat1 |>
-                pivot_longer(env,names_to = "var_metric",values_to = "var.value") |>
-                mutate(var.value = var.value/2), #shrink for plotting purposes
-              ss_time_plot_dat1|>
-                pivot_longer(date,names_to = "var_metric",values_to = "var.value")) |>
-  mutate(var_metric = factor(ifelse(var_metric == "env","Environment","Year"),levels = c("Year","Environment")))
+                         pivot_longer(env,names_to = "var_metric",values_to = "var.value") |>
+                         mutate(var.value = var.value/2), #shrink for plotting purposes
+                       ss_time_plot_dat1|>
+                         pivot_longer(date,names_to = "var_metric",values_to = "var.value") ) |>
+  mutate(var_metric = factor(ifelse(var_metric == "env","Environment",
+                                    ifelse(var_metric == "date","Year","Bimodality")),
+                             levels = c("Year","Environment","Bimodality")))
+
+fig1_plot_dat_bimod <- subset(bimod_plot_datS1, 
+                              lake %in% c("Kinneret","Windermere"))|>
+  mutate(var_metric = "bimodal") |>
+  mutate(var_metric = factor(ifelse(var_metric == "env","Environment",
+                                    ifelse(var_metric == "date","Year","Bimodality")),
+                             levels = c("Year","Environment","Bimodality"))) |>
+  right_join(subset(bimod_modes,
+                    lake %in% c("Kinneret","Windermere")),by = c("lake","metric"),
+             relationship = "many-to-many") |>
+  pivot_longer(mode1:mode2,values_to = "modes")|>
+  dplyr::mutate(mode_sig = ifelse(modality_coef > 0.5, paste0(modes,"*"),paste0(modes)))
+  
 
 
-fig1 <- ggplot(data = fig1_plot_dat, aes(x=var.value,y=metric.val)) + 
+fig1 <- ggplot(data = fig1_plot_dat, aes(y=metric.val)) + 
   geom_point(aes(x=var.value, y = metric.val))+
   geom_path(aes(x=var.value, y = metric.val)) +  
   xlab("Expanatory variable") + ylab("Scaled metric score")+ 
@@ -402,24 +490,27 @@ fig1 <- ggplot(data = fig1_plot_dat, aes(x=var.value,y=metric.val)) +
                                                   background_y = ggh4x::elem_list_rect(fill = c("#D6D6D6","#D6D6D6",rep("white",4))),
                                                   background_x = ggh4x::elem_list_rect(fill = c(rep("white",2))),
                                                   by_layer_y = F)) +
-  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Environment"),aes(x=var.value,y=fit), col="blue",size=0.8, linetype = "solid")+
-  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Environment"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
-  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(x=var.value,y=fit), col="red",size=0.8, linetype = "solid")+
-  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Environment"),aes(x=var.value,y=fit), col="blue",linewidth=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Environment"),aes(x=var.value,ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(x=var.value,y=fit), col="red",linewidth=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Environment"),aes(x=var.value,ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
   geom_point(data = filter(fig1_plot_dat, thresh.var == start.date & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="Start date"))+
   geom_point(data = filter(fig1_plot_dat, thresh.var == last.date & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="End date"))+
   geom_point(data = filter(fig1_plot_dat,transition == "trans" & var_metric == "Environment"),aes(x=var.value, y = metric.val,col="Transition\ndates"))+
   ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Phytoplankton" & var_metric == "Environment"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=1.5,nudge_y=-0.25,segment.linetype=2,min.segment.length = 0.1)+
   ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Zooplankton" & var_metric == "Environment"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=-1.5,nudge_y=0.5,segment.linetype=2,min.segment.length = 0.1)+
-  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Year"),aes(x=var.value,y=fit), col="blue",size=0.8, linetype = "solid")+
-  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Year"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
-  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(x=var.value,y=fit), col="red",size=0.8, linetype = "solid")+
-  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="pre" & var_metric == "Year"),aes(x=var.value,y=fit), col="blue",linewidth=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="pre"& var_metric == "Year"),aes(x=var.value,ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#A1B4FE", col="#A1B4FE",alpha = 0.2)+
+  geom_line(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(x=var.value,y=fit), col="red",linewidth=0.8, linetype = "solid")+
+  geom_ribbon(data = filter(fig1_plot_dat, threshold=="post"& var_metric == "Year"),aes(x=var.value,ymin = fit - (1.96 * ci),ymax = fit + (1.96 * ci)  ), fill = "#FFA6B9", col="#FFA6B9",alpha = 0.2)+
   geom_point(data = filter(fig1_plot_dat, thresh.var == start.date & var_metric == "Year"),aes(x=var.value, y = metric.val,col="Start date"))+
   geom_point(data = filter(fig1_plot_dat, thresh.var == last.date & var_metric == "Year"),aes(x=var.value, y = metric.val,col="End date"))+
   geom_point(data = filter(fig1_plot_dat,transition == "trans" & var_metric == "Year"),aes(x=var.value, y = metric.val,col="Transition\ndates"))+
   ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Phytoplankton" & var_metric == "Year"), aes(x=var.value, y = metric.val,label=thresh.var),force =1,nudge_x=1.5,nudge_y=-0.75,segment.linetype=2,min.segment.length = 0.1)+
   ggrepel::geom_text_repel(data = filter(fig1_plot_dat,transition == "trans" & metric == "Zooplankton" & var_metric == "Year"), aes(x=var.value, y = metric.val,label=thresh.var),force =1.5,nudge_x=-7.5,nudge_y=0.25,segment.linetype=2,min.segment.length = 0.1)+
+  geom_density(data = fig1_plot_dat_bimod,aes(y = metric.value)) +
+  geom_hline(data = fig1_plot_dat_bimod,aes(yintercept = modes),linetype = "dashed",colour = "black")+
+  geom_text(data = fig1_plot_dat_bimod,aes(y=modes+0.5,x=0.05,label = mode_sig),size = 5)+
   scale_colour_manual(values = c("blue","red","#FFE823"),breaks = c("Start date", "End date", "Transition\ndates"), name = NULL, guide = guide_legend(override.aes = list(size = 5))) +
   theme_classic() +
   theme(legend.text=element_text(size=12),
@@ -496,12 +587,28 @@ p_envS1 <- ggplot(data = ss_plot_datS1, aes(x=env,y=metric.val)) +
         legend.position = "top",
         panel.border = element_rect(linewidth = 1,fill = "transparent"))
 
+p_bimodal <- ggplot(right_join(bimod_plot_datS1,bimod_modes,relationship = "many-to-many") |>
+                      group_by(metric,lake)) +
+  geom_density(aes(y = metric.value)) +
+  #geom_histogram(aes(y = metric.value),binwidth = 0.5) +
+  geom_hline(aes(yintercept = modes),linetype = "dashed",colour = "black")+
+  geom_text(aes(y=modes+0.25,x=0.2,label = mode_sig),size = 5)+
+  facet_grid(metric~lake,scales = "free_x") +
+  xlab("Density") + ylab("Scaled metric score")+ 
+  theme_classic() +
+  theme(legend.text=element_text(size=12),
+        strip.background = element_rect(fill = "#D6D6D6"),
+        strip.placement.y = "outside",
+        legend.position = "top",
+        panel.border = element_rect(linewidth = 1,fill = "transparent"))
+
 
 ggplot2::ggsave("/Users/ul20791/Desktop/Academia/Papers/OBrien_et_al_PlankEWS/lake_state_spaces_supp_fig.png",
                 ggpubr::ggarrange(p_temporalS1 + ggtitle("Time series"),
                                   p_envS1 +  ggtitle("State space"),
+                                  p_bimodal +  ggtitle("Bimodality"),
                                   labels="AUTO",font.label = list(face="plain"),
-                                  common.legend = T,ncol=1,nrow=2,legend = "top")
+                                  common.legend = T,ncol=1,nrow=3,legend = "top")
                 ,width = 16,height=9,dpi=300)
 
 #############################################################################
@@ -512,17 +619,22 @@ state_transition_dates <- subset(lake_state_space,transition == "trans") |>
   rename(state_date = thresh.var)
 temporal_transition_dates <- subset(lake_temporal,transition == "trans") |>
   rename(temporal_date = date)
-
+bimod_dates <- lake_bimod |>
+  dplyr::mutate(is_bimodal = ifelse(modality_coef > 0.5 & all(!is.na(c(mode1,mode2))),TRUE,FALSE))
+  
 transition_dates <-expand.grid(metric = unique(c(lake_state_space$metric,lake_temporal$metric)),
               lake = unique(c(lake_state_space$lake,lake_temporal$lake))) |>
   left_join(state_transition_dates |>
-            select(metric,lake,state_date),by = c("lake","metric")) |>
+            select(metric,lake,state_date),by = c("lake","metric"),
+            relationship = "many-to-many") |>
   left_join(temporal_transition_dates |>
-            select(metric,lake,temporal_date),by = c("lake","metric")) |>
+            select(metric,lake,temporal_date),by = c("lake","metric"),
+            relationship = "many-to-many") |>
   group_by(metric,lake) |>
   slice_head(n=1) |>
   mutate(date_match = ifelse(state_date == temporal_date, TRUE, FALSE),
-         threshold_date = ifelse(isTRUE(date_match),state_date,NA))
+         threshold_date = ifelse(isTRUE(date_match),state_date,NA)) |>
+  left_join(bimod_dates,by = c("lake","metric"))
 
 write.csv(transition_dates,"Data/transition_dates.csv")
 
