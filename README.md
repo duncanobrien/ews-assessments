@@ -3,8 +3,6 @@
 
 Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Dutta P.S., Matsuzaki S.S., May L. & Clements C.F. 2023. Early warning signals are hampered by a lack of critical transitions in empirical lake data.
 
-## Graphical Abstract
-
 ## Data Sources
 Lake Kinneret and Lake Kasumigaura plankton data are available on request from Dr Gideon Gal and Dr Shin-ichiro S. Matsuzaki respectively. 
 > :warning: **Please do not use those data without permission**
