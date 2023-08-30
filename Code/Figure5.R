@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Figure 3 #
+# Figure 5 #
 ########################################################################################################################
 
 require(tidyverse)
@@ -69,4 +69,4 @@ ggsave(ggplot(dat_method_trials,aes(y = .variable, x = .value)) +
          theme(legend.position = "none",
                panel.grid.minor = element_blank(),
                panel.grid.major = element_blank()),
-       filename = "Figures/figure_3.pdf",width = 5,height = 4)
+       filename = "Figures/figure_5.pdf",width = 5,height = 4)

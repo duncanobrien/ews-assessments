@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Figure 2 #
+# Figure 4 #
 ########################################################################################################################
 
 require(tidyverse)
@@ -257,16 +257,16 @@ fig2c <- ggplot(fig1_plot_dat2) +
         axis.title.x= element_text(size=14),
         panel.border = element_rect(linewidth = 1,fill = "transparent"))
 
-ggplot2::ggsave("Figures/figure_2a.pdf",
+ggplot2::ggsave("Figures/figure_4a.pdf",
                 ggpubr::ggarrange(fig2a,fig2b,fig2c,
                                   ncol = 3,common.legend = T),
                 width = 10,height=6,dpi=300)
 
 ############ 
-#Create figure 2b
+#Create figure 4b
 ############
 
-ggplot2::ggsave("Figures/figure_2b.pdf",
+ggplot2::ggsave("Figures/figure_4b.pdf",
                 ggplot(state.kas.dat,aes(x=date,y=phyto_density)) +
                   geom_point(col="#000080") +
                   geom_vline(xintercept = 2010.5, linetype = "longdash",color = "grey40")+
@@ -278,7 +278,7 @@ ggplot2::ggsave("Figures/figure_2b.pdf",
                          legend.box.background = element_rect(fill='transparent') ),
                 width = 3.5,height=2,dpi=300,bg='transparent')
 
-ggplot2::ggsave("Figures/figure_2c.pdf",
+ggplot2::ggsave("Figures/figure_4c.pdf",
                 ggplot(state.kas.dat,aes(x=date,y=zoo_density)) +
                   geom_point(col="#552200") +
                   geom_vline(xintercept = 2010.5, linetype = "longdash",color = "grey40")+

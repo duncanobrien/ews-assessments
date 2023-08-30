@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Figure 4 #
+# Figure 6 #
 ########################################################################################################################
 
 require(tidyverse)
@@ -174,4 +174,4 @@ ggsave(ind_true_plot +
          ind_false_plot +
          patchwork::plot_layout(guides = 'collect') + 
          plot_annotation(tag_levels = 'A'),
-       filename = "Figures/figure_4.pdf",width = 9,height = 6)
+       filename = "Figures/figure_6.pdf",width = 9,height = 6)

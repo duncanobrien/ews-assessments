@@ -1,5 +1,5 @@
 ########################################################################################################################
-# Supplementary Tables 6 - 11 #
+# Supplementary Tables 8 - 13 #
 ########################################################################################################################
 
 require(brms)
@@ -18,37 +18,37 @@ ews_mod_ind_yr_false <- readRDS(file = "Results/ews_models/indicator_models/ews_
 ############ 
 
 #drop third column (as is jsut stating the credible interval value - i.e. 95%)
-tableS6 <- bayestestR::describe_posterior(ews_mod_method_mth, ci = 0.95, test="none")[,-3] |>
+tableS8 <- bayestestR::describe_posterior(ews_mod_method_mth, ci = 0.95, test="none")[,-3] |>
   dplyr::mutate(Parameter = gsub("b_method_code","",Parameter),
                 Parameter = ifelse(Parameter == 'univariate_ML',"EWSNet",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
   dplyr::mutate(across(Rhat:ESS,~round(.,digits = 2)))
 
-tableS7 <- bayestestR::describe_posterior(ews_mod_method_yr, ci = 0.95, test="none")[,-3] |>
+tableS9 <- bayestestR::describe_posterior(ews_mod_method_yr, ci = 0.95, test="none")[,-3] |>
   dplyr::mutate(Parameter = gsub("b_method_code","",Parameter),
                 Parameter = ifelse(Parameter == 'univariate_ML',"EWSNet",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
   dplyr::mutate(across(Rhat:ESS,~round(.,digits = 2)))
 
-tableS8 <- bayestestR::describe_posterior(ews_mod_ind_mth_true, ci = 0.95, test="none")[,-3] |>
+tableS10 <- bayestestR::describe_posterior(ews_mod_ind_mth_true, ci = 0.95, test="none")[,-3] |>
   dplyr::mutate(Parameter = gsub("b_indicator","",Parameter),
                 Parameter = gsub("P"," + ",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
   dplyr::mutate(across(Rhat:ESS,~round(.,digits = 2)))
 
-tableS9 <- bayestestR::describe_posterior(ews_mod_ind_yr_true, ci = 0.95, test="none")[-1,-3] |>
+tableS11 <- bayestestR::describe_posterior(ews_mod_ind_yr_true, ci = 0.95, test="none")[-1,-3] |>
   dplyr::mutate(Parameter = gsub("b_indicator","",Parameter),
                 Parameter = gsub("P"," + ",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
   dplyr::mutate(across(Rhat:ESS,~round(.,digits = 2)))
 
-tableS10 <- bayestestR::describe_posterior(ews_mod_ind_mth_false, ci = 0.95, test="none")[-1,-3] |>
+tableS12 <- bayestestR::describe_posterior(ews_mod_ind_mth_false, ci = 0.95, test="none")[-1,-3] |>
   dplyr::mutate(Parameter = gsub("b_indicator","",Parameter),
                 Parameter = gsub("P"," + ",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
   dplyr::mutate(across(Rhat:ESS,~round(.,digits = 2)))
 
-tableS11 <- bayestestR::describe_posterior(ews_mod_ind_yr_false, ci = 0.95, test="none")[-1,-3] |>
+tableS13 <- bayestestR::describe_posterior(ews_mod_ind_yr_false, ci = 0.95, test="none")[-1,-3] |>
   dplyr::mutate(Parameter = gsub("b_indicator","",Parameter),
                 Parameter = gsub("P"," + ",Parameter)) |>
   dplyr::mutate(across(Median:CI_high,~round(.,digits =3))) |>
@@ -58,9 +58,9 @@ tableS11 <- bayestestR::describe_posterior(ews_mod_ind_yr_false, ci = 0.95, test
 #Export Tables
 ############ 
 
-write.csv(tableS6,"Results/supplementary_info/supplementary_tables/table_S6.csv",row.names = FALSE)
-write.csv(tableS7,"Results/supplementary_info/supplementary_tables/table_S7.csv",row.names = FALSE)
 write.csv(tableS8,"Results/supplementary_info/supplementary_tables/table_S8.csv",row.names = FALSE)
 write.csv(tableS9,"Results/supplementary_info/supplementary_tables/table_S9.csv",row.names = FALSE)
 write.csv(tableS10,"Results/supplementary_info/supplementary_tables/table_S10.csv",row.names = FALSE)
 write.csv(tableS11,"Results/supplementary_info/supplementary_tables/table_S11.csv",row.names = FALSE)
+write.csv(tableS12,"Results/supplementary_info/supplementary_tables/table_S12.csv",row.names = FALSE)
+write.csv(tableS13,"Results/supplementary_info/supplementary_tables/table_S13.csv",row.names = FALSE)
