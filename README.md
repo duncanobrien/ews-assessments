@@ -1,7 +1,7 @@
 # ews-assessments
 [![DOI](https://zenodo.org/badge/555307206.svg)](https://zenodo.org/badge/latestdoi/555307206)
 
-Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Dutta P.S., Matsuzaki S.S., May L. & Clements C.F. 2023. Early warning signals require critical transitions in empirical lake data.
+Processed data, code and results from O'Brien D.A., Deb S., Gal G., Thackeray S.J., Dutta P.S., Matsuzaki S.S., May L. & Clements C.F. 2023. Early warning signals have limited applicability to empirical lake data.
 
 ## Data Sources
 Lake Kinneret and Lake Kasumigaura plankton data are available on request from Dr Gideon Gal and Dr Shin-ichiro S. Matsuzaki respectively. 
