@@ -17,9 +17,9 @@ Gunn, I.D.M., George D.G., Johnson D., Jones D.H. & May, L. 2015. Crustacean zoo
 
 *Lake Mendota and Monona*: 
 
-Carpenter S., Kitchell J., Cole  J. & Pace M. 2017. Cascade project at North Temperate Lakes LTER core data phytoplankton 1984 - 2015 ver 4. *Environmental Data Initiative*. https://doi.org/10.6073/pasta/364622a6632f857289f9abc6a99d3ae7.
+Magnuson, J.J., Carpenter, S.R. and Stanley, E.H. 2020. North Temperate Lakes LTER: Phytoplankton - Madison Lakes Area 1995 - current ver 29. Environmental Data Initiative. https://doi.org/10.6073/pasta/f7550858af209a778ca3f8717ed31ed8.
 
-Carpenter S., Kitchell J., Cole  J. & Pace M. 2017. Cascade project at North Temperate Lakes LTER core data zooplankton 1984 -    2016 ver 4. *Environmental Data Initiative*. https://doi.org/10.6073/pasta/6fc6015c620056034512fde089d50c27.
+Magnuson J.J, Carpenter S.R., and Stanley, E.H. 2019. North Temperate Lakes LTER: Zooplankton - Madison Lakes Area 1997 - current ver 31. Environmental Data Initiative. https://doi.org/10.6073/pasta/8b265c0300252c87805f26f41e174aa4.
 
 *Lake Washington*: 
 
